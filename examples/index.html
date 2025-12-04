@@ -1,0 +1,334 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Network Compression Utils - 示例演示</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+            overflow: hidden;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #2c3e50 0%, #34495e 100%);
+            color: white;
+            padding: 40px 30px;
+            text-align: center;
+        }
+
+        .header h1 {
+            font-size: 2.5em;
+            margin-bottom: 10px;
+            font-weight: 300;
+        }
+
+        .header p {
+            font-size: 1.2em;
+            opacity: 0.9;
+        }
+
+        .content {
+            padding: 40px 30px;
+        }
+
+        .intro {
+            text-align: center;
+            margin-bottom: 50px;
+        }
+
+        .intro h2 {
+            color: #2c3e50;
+            margin-bottom: 15px;
+            font-size: 1.8em;
+        }
+
+        .intro p {
+            color: #666;
+            font-size: 1.1em;
+            max-width: 800px;
+            margin: 0 auto;
+        }
+
+        .examples-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+            gap: 30px;
+            margin-bottom: 40px;
+        }
+
+        .example-card {
+            background: #f8f9fa;
+            border-radius: 12px;
+            padding: 25px;
+            border: 1px solid #e9ecef;
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .example-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 4px;
+            background: linear-gradient(90deg, #667eea, #764ba2);
+        }
+
+        .example-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 30px rgba(0,0,0,0.15);
+        }
+
+        .example-card h3 {
+            color: #2c3e50;
+            margin-bottom: 12px;
+            font-size: 1.4em;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .example-card .icon {
+            width: 30px;
+            height: 30px;
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: bold;
+        }
+
+        .example-card p {
+            color: #666;
+            margin-bottom: 20px;
+            line-height: 1.6;
+        }
+
+        .example-card .features {
+            margin-bottom: 20px;
+        }
+
+        .example-card .features span {
+            display: inline-block;
+            background: #e3f2fd;
+            color: #1976d2;
+            padding: 4px 10px;
+            border-radius: 15px;
+            font-size: 0.85em;
+            margin: 3px;
+        }
+
+        .btn {
+            display: inline-block;
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: white;
+            padding: 12px 25px;
+            text-decoration: none;
+            border-radius: 8px;
+            font-weight: 500;
+            transition: all 0.3s ease;
+            text-align: center;
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+            color: white;
+            text-decoration: none;
+        }
+
+        .difficulty {
+            position: absolute;
+            top: 15px;
+            right: 15px;
+            padding: 5px 12px;
+            border-radius: 20px;
+            font-size: 0.8em;
+            font-weight: 600;
+            text-transform: uppercase;
+        }
+
+        .difficulty.basic {
+            background: #d4edda;
+            color: #155724;
+        }
+
+        .difficulty.intermediate {
+            background: #fff3cd;
+            color: #856404;
+        }
+
+        .difficulty.advanced {
+            background: #f8d7da;
+            color: #721c24;
+        }
+
+        .footer {
+            background: #f8f9fa;
+            padding: 30px;
+            text-align: center;
+            border-top: 1px solid #e9ecef;
+        }
+
+        .footer h3 {
+            color: #2c3e50;
+            margin-bottom: 15px;
+        }
+
+        .footer p {
+            color: #666;
+            margin-bottom: 10px;
+        }
+
+        .footer a {
+            color: #667eea;
+            text-decoration: none;
+            font-weight: 500;
+        }
+
+        .footer a:hover {
+            text-decoration: underline;
+        }
+
+        @media (max-width: 768px) {
+            .header h1 {
+                font-size: 2em;
+            }
+
+            .examples-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .content {
+                padding: 20px 15px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>Network Compression Utils</h1>
+            <p>网络感知数据压缩库 - 示例演示</p>
+        </div>
+
+        <div class="content">
+            <div class="intro">
+                <h2>🚀 探索功能示例</h2>
+                <p>通过以下交互式示例，了解如何使用 Network Compression Utils 库的各种功能。每个示例都展示了不同的使用场景和最佳实践。</p>
+            </div>
+
+            <div class="examples-grid">
+                <div class="example-card">
+                    <span class="difficulty basic">基础</span>
+                    <h3>
+                        <div class="icon">1</div>
+                        网络检测
+                    </h3>
+                    <p>学习如何检测用户的网络连接类型、速度和质量，为后续的压缩决策提供基础数据。</p>
+                    <div class="features">
+                        <span>Network Information API</span>
+                        <span>网络质量评分</span>
+                        <span>实时监控</span>
+                    </div>
+                    <a href="network-detection.html" class="btn">查看示例 →</a>
+                </div>
+
+                <div class="example-card">
+                    <span class="difficulty basic">基础</span>
+                    <h3>
+                        <div class="icon">2</div>
+                        配置管理
+                    </h3>
+                    <p>了解如何配置压缩阈值、网络类型和输出格式，根据应用需求定制压缩策略。</p>
+                    <div class="features">
+                        <span>自定义阈值</span>
+                        <span>网络类型配置</span>
+                        <span>格式选择</span>
+                    </div>
+                    <a href="config-management.html" class="btn">查看示例 →</a>
+                </div>
+
+                <div class="example-card">
+                    <span class="difficulty intermediate">中级</span>
+                    <h3>
+                        <div class="icon">3</div>
+                        数据压缩
+                    </h3>
+                    <p>演示如何使用不同的压缩算法来减小数据体积，提高网络传输效率。</p>
+                    <div class="features">
+                        <span>LZ-String压缩</span>
+                        <span>压缩比率统计</span>
+                        <span>性能测试</span>
+                    </div>
+                    <a href="compression-demo.html" class="btn">查看示例 →</a>
+                </div>
+
+                <div class="example-card">
+                    <span class="difficulty basic">基础</span>
+                    <h3>
+                        <div class="icon">4</div>
+                        基础使用
+                    </h3>
+                    <p>快速入门示例，展示最基本的使用方法，适合初学者了解库的核心功能。</p>
+                    <div class="features">
+                        <span>简单API调用</span>
+                        <span>自动压缩</span>
+                        <span>多种格式输出</span>
+                    </div>
+                    <a href="basic.html" class="btn">查看示例 →</a>
+                </div>
+
+                <div class="example-card">
+                    <span class="difficulty advanced">高级</span>
+                    <h3>
+                        <div class="icon">5</div>
+                        完整演示
+                    </h3>
+                    <p>综合展示所有功能的完整示例，包括实际应用场景和最佳实践。</p>
+                    <div class="features">
+                        <span>综合功能演示</span>
+                        <span>实际应用场景</span>
+                        <span>性能优化</span>
+                    </div>
+                    <a href="complete-demo.html" class="btn">查看示例 →</a>
+                </div>
+            </div>
+        </div>
+
+        <div class="footer">
+            <h3>📚 相关资源</h3>
+            <p><strong>GitHub 仓库：</strong> <a href="https://github.com/little2512/network-compression-utils">little2512/network-compression-utils</a></p>
+            <p><strong>npm 包：</strong> <a href="https://www.npmjs.com/package/network-compression-utils">network-compression-utils</a></p>
+            <p><strong>文档：</strong> <a href="https://github.com/little2512/network-compression-utils/blob/main/README.md">完整文档</a></p>
+            <p style="margin-top: 20px; font-size: 0.9em; color: #999;">
+                版本 1.0.1 | 使用 GitHub Pages 托管
+            </p>
+        </div>
+    </div>
+</body>
+</html>
