@@ -34,11 +34,15 @@ export default class NetworkDetector {
    * @returns {boolean}
    */
   isNetworkInformationAPIAvailable() {
-    return (
-      typeof navigator !== 'undefined' &&
-      navigator.connection &&
-      typeof navigator.connection.effectiveType === 'string'
-    );
+    try {
+      return (
+        typeof navigator !== 'undefined' &&
+        navigator.connection &&
+        typeof navigator.connection.effectiveType === 'string'
+      );
+    } catch (error) {
+      return false;
+    }
   }
 
   /**

@@ -1,6 +1,8 @@
 export default {
   testEnvironment: 'jsdom',
-  transform: {},
+  transform: {
+    '^.+\\.js$': 'babel-jest'
+  },
   moduleFileExtensions: ['js', 'json'],
   transformIgnorePatterns: [
     'node_modules/(?!(.*\\.mjs$))'
@@ -16,6 +18,5 @@ export default {
   coverageDirectory: 'coverage',
   coverageReporters: ['text', 'lcov', 'html'],
   verbose: true,
-  testMatch: ['<rootDir>/src/tests/**/*.test.js'],
-  globals: {}
+  testMatch: ['<rootDir>/src/tests/**/*.test.js']
 };

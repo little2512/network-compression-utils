@@ -1,3 +1,4 @@
+ /**
  * Compression Manager Tests
  */
 

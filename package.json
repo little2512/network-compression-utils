@@ -15,29 +15,61 @@
     "dev": "rollup -c -w",
     "test": "cross-env NODE_OPTIONS=--experimental-vm-modules jest --config=jest.config.js",
     "test:watch": "cross-env NODE_OPTIONS=--experimental-vm-modules jest --config=jest.config.js --watch",
+    "test:coverage": "npm test -- --coverage",
     "lint": "eslint src/**/*.js",
     "lint:fix": "eslint src/**/*.js --fix",
     "format": "prettier --write src/**/*.js",
-    "prepublishOnly": "npm run build"
+    "prepublishOnly": "npm run build",
+    "prepack": "npm run build",
+    "dry-run": "npm pack --dry-run",
+    "version": "npm version",
+    "postversion": "git push && git push --tags",
+    "release": "node scripts/release.js",
+    "release:patch": "npm run release patch",
+    "release:minor": "npm run release minor",
+    "release:major": "npm run release major",
+    "release:publish": "npm run release publish",
+    "release:dry-run": "npm run release dry-run"
   },
   "keywords": [
     "network",
     "compression",
     "browser",
     "utility",
-    "performance"
+    "performance",
+    "javascript",
+    "library",
+    "lz-string",
+    "network-aware",
+    "adaptive",
+    "optimization"
   ],
-  "author": "",
+  "author": "little2512",
   "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/little2512/network-compression-utils.git"
+  },
+  "bugs": {
+    "url": "https://github.com/little2512/network-compression-utils/issues"
+  },
+  "homepage": "https://github.com/little2512/network-compression-utils#readme",
+  "publishConfig": {
+    "access": "public"
+  },
+  "engines": {
+    "node": ">=14.0.0"
+  },
   "devDependencies": {
-    "@babel/core": "^7.22.0",
+    "@babel/core": "^7.28.5",
     "@babel/plugin-transform-runtime": "^7.28.5",
-    "@babel/preset-env": "^7.22.0",
+    "@babel/preset-env": "^7.28.5",
     "@babel/runtime-corejs3": "^7.28.4",
     "@rollup/plugin-babel": "^6.0.3",
     "@rollup/plugin-commonjs": "^25.0.0",
     "@rollup/plugin-node-resolve": "^15.1.0",
     "@rollup/plugin-terser": "^0.4.3",
+    "babel-jest": "^30.2.0",
     "core-js": "^3.47.0",
     "cross-env": "^10.1.0",
     "eslint": "^8.42.0",

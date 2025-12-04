@@ -8,7 +8,10 @@ describe('FormatConverter', () => {
   let converter;
 
   beforeEach(() => {
-    converter = new FormatConverter();
+    converter = new FormatConverter({
+      URLSearchParams: global.URLSearchParams || URLSearchParams,
+      FormData: global.FormData || FormData
+    });
   });
 
   describe('Basic Conversion', () => {

@@ -12,7 +12,7 @@ describe('ConfigManager', () => {
 
       expect(config.thresholds['slow-2g']).toBe(100);
       expect(config.thresholds['2g']).toBe(500);
-      expect(config.thresholds['3g']).toBe(1024);
+      expect(config.thresholds['3g']).toBe(700);
       expect(config.thresholds['4g']).toBe(2048);
       expect(config.defaultFormat).toBe('urlsearch');
       expect(config.enableAutoCompression).toBe(true);
@@ -329,7 +329,7 @@ describe('ConfigManager', () => {
       const thresholds = manager.getAllThresholds();
       expect(thresholds['slow-2g']).toBe(100); // Default
       expect(thresholds['2g']).toBe(500); // Default
-      expect(thresholds['3g']).toBe(1024); // Default
+      expect(thresholds['3g']).toBe(700); // Default
       expect(thresholds['4g']).toBe(4096); // User value
     });
 

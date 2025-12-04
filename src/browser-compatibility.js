@@ -524,7 +524,7 @@ class BrowserCompatibilityManager {
    * Get browser information
    */
   getBrowserInfo() {
-    const userAgent = typeof navigator !== 'undefined' ? navigator.userAgent : 'Unknown';
+    const userAgent = typeof navigator !== 'undefined' && navigator.userAgent ? navigator.userAgent : 'Unknown';
 
     // Basic browser detection
     let browser = 'Unknown';

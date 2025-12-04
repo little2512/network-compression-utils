@@ -31,7 +31,7 @@ const DEFAULT_CONFIG = {
   thresholds: {
     'slow-2g': 100, // Compress data larger than 100 bytes on very slow networks
     '2g': 500, // Compress data larger than 500 bytes on 2g networks
-    '3g': 1024, // Compress data larger than 1KB on 3g networks
+    '3g': 700, // Compress data larger than 700 bytes on 3g networks
     '4g': 2048, // Compress data larger than 2KB on 4g networks
   },
   defaultFormat: 'urlsearch',
