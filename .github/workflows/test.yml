@@ -1,0 +1,131 @@
+name: Test Suite
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main, develop ]
+  # 允许手动触发
+  workflow_dispatch:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+
+    strategy:
+      matrix:
+        node-version: [14.x, 16.x, 18.x, 20.x, 22.x]
+        # 在不同操作系统上测试
+        os: [ubuntu-latest, windows-latest, macos-latest]
+        # 排除一些组合以节省资源
+        exclude:
+          - os: macos-latest
+            node-version: 16.x
+          - os: windows-latest
+            node-version: 14.x
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Setup Node.js ${{ matrix.node-version }} on ${{ matrix.os }}
+      uses: actions/setup-node@v4
+      with:
+        node-version: ${{ matrix.node-version }}
+        cache: 'npm'
+
+    - name: Install dependencies
+      run: npm ci
+
+    - name: Run linting
+      run: npm run lint
+
+    - name: Run tests with coverage
+      run: npm run test:coverage
+
+    - name: Build project
+      run: npm run build
+
+    - name: Test package creation
+      run: npm run dry-run
+
+    - name: Upload coverage reports to Codecov
+      if: matrix.os == 'ubuntu-latest' && matrix.node-version == '20.x'
+      uses: codecov/codecov-action@v3
+      with:
+        file: ./coverage/lcov.info
+        flags: unittests
+        name: codecov-umbrella
+
+  browser-tests:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '20.x'
+        cache: 'npm'
+
+    - name: Install dependencies
+      run: npm ci
+
+    - name: Build project
+      run: npm run build
+
+    - name: Install Playwright
+      run: npx playwright install --with-deps
+
+    - name: Run browser tests
+      run: npm test -- --testPathPattern=browser
+
+    - name: Upload test results
+      uses: actions/upload-artifact@v3
+      if: always()
+      with:
+        name: playwright-report
+        path: playwright-report/
+        retention-days: 30
+
+  compatibility-tests:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '18.x'
+        cache: 'npm'
+
+    - name: Install dependencies
+      run: npm ci
+
+    - name: Test ESM module imports
+      run: node --input-type=module -e "import('./dist/index.esm.js').then(m => console.log('ESM import works:', !!m.default))"
+
+    - name: Test CommonJS imports
+      run: node -e "const lib = require('./dist/index.js'); console.log('CommonJS import works:', !!lib.default)"
+
+    - name: Test UMD build in browser-like environment
+      run: |
+        npm install --save-dev jsdom
+        node -e "
+        const { JSDOM } = require('jsdom');
+        const dom = new JSDOM('<!DOCTYPE html><html><body></body></html>', { runScripts: 'dangerously' });
+        global.window = dom.window;
+        global.document = dom.window.document;
+        global.navigator = dom.window.navigator;
+
+        // Load UMD build
+        const fs = require('fs');
+        const umdCode = fs.readFileSync('./dist/index.umd.js', 'utf8');
+        eval(umdCode);
+
+        console.log('UMD build loads successfully');
+        "
