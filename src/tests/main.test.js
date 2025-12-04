@@ -1,4 +1,4 @@
- /**
+/**
  * Main Network Compression Utils Tests
  */
 
@@ -135,7 +135,10 @@ describe('NetworkCompressionUtils', () => {
     test('should force compression when requested', () => {
       const smallData = { small: 'test' };
       const normalResult = ncu.compress({ data: smallData });
-      const forceResult = ncu.compress({ data: smallData, forceCompression: true });
+      const forceResult = ncu.compress({
+        data: smallData,
+        forceCompression: true,
+      });
 
       // Normal result might not compress, but forced result should attempt it
       expect(typeof normalResult.compressed).toBe('boolean');
@@ -151,10 +154,10 @@ describe('NetworkCompressionUtils', () => {
           profile: {
             settings: {
               theme: 'dark',
-              notifications: ['email', 'sms']
-            }
-          }
-        }
+              notifications: ['email', 'sms'],
+            },
+          },
+        },
       };
 
       const result = ncu.compress({ data, outputFormat: 'urlsearch' });
@@ -168,7 +171,7 @@ describe('NetworkCompressionUtils', () => {
     test('should handle arrays in FormData', () => {
       const data = {
         tags: ['javascript', 'react', 'nodejs'],
-        scores: [95, 87, 92]
+        scores: [95, 87, 92],
       };
 
       const result = ncu.compress({ data, outputFormat: 'formdata' });
@@ -223,7 +226,9 @@ describe('NetworkCompressionUtils', () => {
 
       // Should fall back to default format
       expect(result.outputFormat).toBeDefined();
-      expect(['urlsearch', 'formdata', 'string']).toContain(result.outputFormat);
+      expect(['urlsearch', 'formdata', 'string']).toContain(
+        result.outputFormat
+      );
     });
   });
 
@@ -360,7 +365,9 @@ describe('NetworkCompressionUtils', () => {
       const stringRecommendation = ncu.recommendFormat(stringData);
 
       expect(fileRecommendation).toBe('formdata'); // Files should recommend FormData
-      expect(['urlsearch', 'formdata', 'string']).toContain(stringRecommendation);
+      expect(['urlsearch', 'formdata', 'string']).toContain(
+        stringRecommendation
+      );
     });
 
     test('should validate format compatibility', () => {
@@ -401,9 +408,9 @@ describe('NetworkCompressionUtils', () => {
           description: `This is item number ${i} with a detailed description`,
           metadata: {
             created: new Date().toISOString(),
-            tags: ['tag1', 'tag2', 'tag3']
-          }
-        }))
+            tags: ['tag1', 'tag2', 'tag3'],
+          },
+        })),
       };
 
       const startTime = performance.now();
@@ -497,39 +504,39 @@ describe('NetworkCompressionUtils', () => {
             bio: 'Software developer specializing in web technologies and network optimization.',
             skills: ['JavaScript', 'React', 'Node.js', 'Python'],
             experience: [
-                {
-                  company: 'Tech Corp',
-                  role: 'Senior Developer',
-                  years: 5,
-                  technologies: ['JavaScript', 'React', 'Node.js']
-                }
-              ]
-          }
+              {
+                company: 'Tech Corp',
+                role: 'Senior Developer',
+                years: 5,
+                technologies: ['JavaScript', 'React', 'Node.js'],
+              },
+            ],
+          },
         },
         timestamp: new Date().toISOString(),
         metadata: {
           version: '1.0.0',
-          source: 'integration-test'
-        }
+          source: 'integration-test',
+        },
       };
 
       // Test all output formats
       const urlResult = ncu.compress({
         data: complexData,
         outputFormat: 'urlsearch',
-        networkType: '3g' // Simulate slower network
+        networkType: '3g', // Simulate slower network
       });
 
       const formResult = ncu.compress({
         data: complexData,
         outputFormat: 'formdata',
-        networkType: '2g' // Simulate very slow network
+        networkType: '2g', // Simulate very slow network
       });
 
       const stringResult = ncu.compress({
         data: complexData,
         outputFormat: 'string',
-        networkType: '4g' // Fast network
+        networkType: '4g', // Fast network
       });
 
       // All should be compressed due to data size and network type

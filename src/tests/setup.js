@@ -15,7 +15,7 @@ global.LZString = {
   decompress: jest.fn((str) => str.replace('comp_', '')),
   // Add more LZ-String methods as needed
   compressToBase64: jest.fn((str) => 'base64_' + str),
-  decompressFromBase64: jest.fn((str) => str.replace('base64_', ''))
+  decompressFromBase64: jest.fn((str) => str.replace('base64_', '')),
 };
 
 // Mock navigator for all tests
@@ -29,13 +29,13 @@ Object.defineProperty(global, 'navigator', {
       saveData: false,
       addEventListener: jest.fn(),
       removeEventListener: jest.fn(),
-      onchange: null
+      onchange: null,
     },
     mozConnection: null,
-    webkitConnection: null
+    webkitConnection: null,
   },
   writable: true,
-  configurable: true
+  configurable: true,
 });
 
 // Mock performance API
@@ -51,14 +51,14 @@ Object.defineProperty(global, 'performance', {
       requestStart: Date.now() + 100,
       responseStart: Date.now() + 200,
       responseEnd: Date.now() + 300,
-      loadEventEnd: Date.now() + 400
+      loadEventEnd: Date.now() + 400,
     },
     navigation: {
-      type: 0
-    }
+      type: 0,
+    },
   },
   writable: true,
-  configurable: true
+  configurable: true,
 });
 
 // Mock console methods to reduce noise in tests
@@ -68,7 +68,7 @@ global.console = {
   warn: jest.fn(),
   error: jest.fn(),
   info: jest.fn(),
-  debug: jest.fn()
+  debug: jest.fn(),
 };
 
 // Enhanced URLSearchParams mock
@@ -86,7 +86,10 @@ if (typeof URLSearchParams === 'undefined') {
       for (const pair of pairs) {
         const [key, value] = pair.split('=');
         if (key) {
-          this.append(decodeURIComponent(key), value ? decodeURIComponent(value) : '');
+          this.append(
+            decodeURIComponent(key),
+            value ? decodeURIComponent(value) : ''
+          );
         }
       }
     }
@@ -120,15 +123,17 @@ if (typeof URLSearchParams === 'undefined') {
 
     forEach(callback, thisArg) {
       this.params.forEach((values, name) => {
-        values.forEach(value => callback.call(thisArg, value, name, this));
+        values.forEach((value) => callback.call(thisArg, value, name, this));
       });
     }
 
     toString() {
       const pairs = [];
       this.params.forEach((values, name) => {
-        values.forEach(value => {
-          pairs.push(`${encodeURIComponent(name)}=${encodeURIComponent(value)}`);
+        values.forEach((value) => {
+          pairs.push(
+            `${encodeURIComponent(name)}=${encodeURIComponent(value)}`
+          );
         });
       });
       return pairs.join('&');
@@ -137,7 +142,7 @@ if (typeof URLSearchParams === 'undefined') {
     entries() {
       const result = [];
       this.params.forEach((values, name) => {
-        values.forEach(value => {
+        values.forEach((value) => {
           result.push([name, value]);
         });
       });
@@ -182,14 +187,14 @@ if (typeof FormData === 'undefined') {
 
     forEach(callback, thisArg) {
       this.data.forEach((values, name) => {
-        values.forEach(value => callback.call(thisArg, value, name, this));
+        values.forEach((value) => callback.call(thisArg, value, name, this));
       });
     }
 
     entries() {
       const result = [];
       this.data.forEach((values, name) => {
-        values.forEach(value => {
+        values.forEach((value) => {
           result.push([name, value]);
         });
       });
@@ -207,7 +212,10 @@ if (typeof Blob === 'undefined') {
     }
 
     get size() {
-      return this.parts.reduce((total, part) => total + (typeof part === 'string' ? part.length : 0), 0);
+      return this.parts.reduce(
+        (total, part) => total + (typeof part === 'string' ? part.length : 0),
+        0
+      );
     }
   };
 }
@@ -223,20 +231,20 @@ const createStorage = () => {
     get length() {
       return storage.size;
     },
-    key: jest.fn((index) => Array.from(storage.keys())[index] || null)
+    key: jest.fn((index) => Array.from(storage.keys())[index] || null),
   };
 };
 
 Object.defineProperty(global, 'localStorage', {
   value: createStorage(),
   writable: true,
-  configurable: true
+  configurable: true,
 });
 
 Object.defineProperty(global, 'sessionStorage', {
   value: createStorage(),
   writable: true,
-  configurable: true
+  configurable: true,
 });
 
 // Mock fetch API
@@ -245,7 +253,7 @@ global.fetch = jest.fn(() =>
     ok: true,
     status: 200,
     json: () => Promise.resolve({}),
-    text: () => Promise.resolve('')
+    text: () => Promise.resolve(''),
   })
 );
 

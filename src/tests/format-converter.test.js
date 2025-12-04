@@ -10,7 +10,7 @@ describe('FormatConverter', () => {
   beforeEach(() => {
     converter = new FormatConverter({
       URLSearchParams: global.URLSearchParams || URLSearchParams,
-      FormData: global.FormData || FormData
+      FormData: global.FormData || FormData,
     });
   });
 

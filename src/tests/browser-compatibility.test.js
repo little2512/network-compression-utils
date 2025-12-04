@@ -8,7 +8,9 @@ import {
   CompressionAdapterFactory,
   NativeNetworkAdapter,
   PerformanceNetworkAdapter,
-  UserAgentNetworkAdapter
+  UserAgentNetworkAdapter,
+  NativeCompressionAdapter,
+  LZStringCompressionAdapter,
 } from '../network-adapters.js';
 
 describe('Browser Compatibility Manager', () => {
@@ -30,7 +32,7 @@ describe('Browser Compatibility Manager', () => {
       global.navigator = {
         connection: { effectiveType: '4g' },
         mozConnection: undefined,
-        webkitConnection: undefined
+        webkitConnection: undefined,
       };
 
       const manager = new BrowserCompatibilityManager();
@@ -44,7 +46,9 @@ describe('Browser Compatibility Manager', () => {
         expect(compatibilityManager.features.urlSearchParams).toBe(true);
       } else {
         expect(compatibilityManager.features.urlSearchParams).toBe(false);
-        expect(compatibilityManager.polyfills.has('urlSearchParams')).toBe(true);
+        expect(compatibilityManager.polyfills.has('urlSearchParams')).toBe(
+          true
+        );
       }
     });
 
@@ -133,8 +137,8 @@ describe('Browser Compatibility Manager', () => {
       expect(report.recommendations).toEqual(
         expect.arrayContaining([
           expect.objectContaining({
-            feature: 'Network Information API'
-          })
+            feature: 'Network Information API',
+          }),
         ])
       );
 
@@ -184,7 +188,7 @@ describe('Browser Compatibility Manager', () => {
       if (!compatibilityManager.features.networkInformation) {
         expect(warnings).toEqual(
           expect.arrayContaining([
-            expect.stringContaining('Network Information API')
+            expect.stringContaining('Network Information API'),
           ])
         );
       }
@@ -225,7 +229,8 @@ describe('Network Adapters', () => {
     });
 
     test('should detect Network Information API availability', () => {
-      const isAvailable = NetworkAdapterFactory.isNetworkInformationAPIAvailable();
+      const isAvailable =
+        NetworkAdapterFactory.isNetworkInformationAPIAvailable();
       expect(typeof isAvailable).toBe('boolean');
     });
 
@@ -247,8 +252,8 @@ describe('Network Adapters', () => {
           rtt: 100,
           saveData: false,
           addEventListener: jest.fn(),
-          removeEventListener: jest.fn()
-        }
+          removeEventListener: jest.fn(),
+        },
       };
 
       adapter = new NativeNetworkAdapter();
@@ -295,11 +300,11 @@ describe('Network Adapters', () => {
           responseStart: 600,
           responseEnd: 800,
           navigationStart: 0,
-          loadEventEnd: 2000
+          loadEventEnd: 2000,
         },
         navigation: {
-          type: 0
-        }
+          type: 0,
+        },
       };
 
       // Mock timers
@@ -340,7 +345,8 @@ describe('Network Adapters', () => {
 
     beforeEach(() => {
       global.navigator = {
-        userAgent: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'
+        userAgent:
+          'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
       };
     });
 
@@ -358,7 +364,8 @@ describe('Network Adapters', () => {
     });
 
     test('should detect mobile from user agent', () => {
-      global.navigator.userAgent = 'Mozilla/5.0 (iPhone; CPU iPhone OS 14_0 like Mac OS X)';
+      global.navigator.userAgent =
+        'Mozilla/5.0 (iPhone; CPU iPhone OS 14_0 like Mac OS X)';
       adapter = new UserAgentNetworkAdapter();
       const info = adapter.getNetworkInfo();
 
@@ -385,7 +392,8 @@ describe('Compression Adapters', () => {
     });
 
     test('should detect CompressionStream availability', () => {
-      const isAvailable = CompressionAdapterFactory.isCompressionStreamAvailable();
+      const isAvailable =
+        CompressionAdapterFactory.isCompressionStreamAvailable();
       expect(typeof isAvailable).toBe('boolean');
     });
   });
@@ -398,20 +406,20 @@ describe('Compression Adapters', () => {
       if (CompressionAdapterFactory.isCompressionStreamAvailable()) {
         global.CompressionStream = jest.fn().mockImplementation(() => ({
           writable: { getWriter: jest.fn() },
-          readable: { getReader: jest.fn() }
+          readable: { getReader: jest.fn() },
         }));
 
         global.DecompressionStream = jest.fn().mockImplementation(() => ({
           writable: { getWriter: jest.fn() },
-          readable: { getReader: jest.fn() }
+          readable: { getReader: jest.fn() },
         }));
 
         global.TextEncoder = jest.fn().mockImplementation(() => ({
-          encode: jest.fn(() => new Uint8Array([1, 2, 3]))
+          encode: jest.fn(() => new Uint8Array([1, 2, 3])),
         }));
 
         global.TextDecoder = jest.fn().mockImplementation(() => ({
-          decode: jest.fn(() => '{"test":"data"}')
+          decode: jest.fn(() => '{"test":"data"}'),
         }));
 
         global.btoa = jest.fn();

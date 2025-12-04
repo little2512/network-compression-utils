@@ -8,7 +8,10 @@ import ConfigManager from './config-manager.js';
 import CompressionManager from './compression-manager.js';
 import FormatConverter from './format-converter.js';
 import BrowserCompatibilityManager from './browser-compatibility.js';
-import { NetworkAdapterFactory, CompressionAdapterFactory } from './network-adapters.js';
+import {
+  NetworkAdapterFactory,
+  CompressionAdapterFactory,
+} from './network-adapters.js';
 
 /**
  * Main compression options
@@ -44,13 +47,16 @@ export default class NetworkCompressionUtils {
     // Check browser compatibility
     const browserSupport = this.compatibilityManager.isBrowserSupported();
     if (!browserSupport.supported) {
-      console.warn('Browser may not be fully supported:', browserSupport.missingRequired);
+      console.warn(
+        'Browser may not be fully supported:',
+        browserSupport.missingRequired
+      );
     }
 
     // Show compatibility warnings if any
     const warnings = this.compatibilityManager.getCompatibilityWarnings();
     if (warnings.length > 0) {
-      warnings.forEach(warning => {
+      warnings.forEach((warning) => {
         if (config.enableLogging !== false) {
           console.warn('Compatibility:', warning);
         }
@@ -86,9 +92,15 @@ export default class NetworkCompressionUtils {
    * Create format converter with polyfill support
    */
   createFormatConverter() {
-    const URLSearchParamsClass = this.compatibilityManager.getFeature('urlSearchParams') || URLSearchParams;
-    const FormDataClass = this.compatibilityManager.getFeature('formData') || FormData;
-    return new FormatConverter({ URLSearchParams: URLSearchParamsClass, FormData: FormDataClass });
+    const URLSearchParamsClass =
+      this.compatibilityManager.getFeature('urlSearchParams') ||
+      URLSearchParams;
+    const FormDataClass =
+      this.compatibilityManager.getFeature('formData') || FormData;
+    return new FormatConverter({
+      URLSearchParams: URLSearchParamsClass,
+      FormData: FormDataClass,
+    });
   }
 
   /**
@@ -507,7 +519,7 @@ export default class NetworkCompressionUtils {
   getPolyfillStatus() {
     return {
       applied: this.compatibilityManager.polyfills.size,
-      features: Array.from(this.compatibilityManager.polyfills.keys())
+      features: Array.from(this.compatibilityManager.polyfills.keys()),
     };
   }
 

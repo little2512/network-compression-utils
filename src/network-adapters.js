@@ -3,6 +3,8 @@
  * Provides alternative implementations for network detection in different environments
  */
 
+/* global LZString */
+
 class NetworkAdapterFactory {
   /**
    * Get the best available network adapter
@@ -29,8 +31,8 @@ class NetworkAdapterFactory {
     return !!(
       typeof navigator !== 'undefined' &&
       (navigator.connection ||
-       navigator.mozConnection ||
-       navigator.webkitConnection)
+        navigator.mozConnection ||
+        navigator.webkitConnection)
     );
   }
 
@@ -65,7 +67,7 @@ class NativeNetworkAdapter {
       downlink: conn.downlink,
       rtt: conn.rtt,
       saveData: conn.saveData || false,
-      type: conn.type || 'unknown'
+      type: conn.type || 'unknown',
     };
   }
 
@@ -73,8 +75,10 @@ class NativeNetworkAdapter {
     if (!this.connection) return;
 
     // Store the original connection object reference for event handling
-    this.connection.addEventListener = this.connection.addEventListener || function() {};
-    this.connection.removeEventListener = this.connection.removeEventListener || function() {};
+    this.connection.addEventListener =
+      this.connection.addEventListener || function () {};
+    this.connection.removeEventListener =
+      this.connection.removeEventListener || function () {};
   }
 
   getNetworkInfo() {
@@ -86,12 +90,15 @@ class NativeNetworkAdapter {
       effectiveType: this.connection.effectiveType || '4g',
       downlink: this.connection.downlink,
       rtt: this.connection.rtt,
-      saveData: this.connection.saveData || false
+      saveData: this.connection.saveData || false,
     };
   }
 
   addEventListener(callback) {
-    if (!this.connection || typeof this.connection.addEventListener !== 'function') {
+    if (
+      !this.connection ||
+      typeof this.connection.addEventListener !== 'function'
+    ) {
       return;
     }
 
@@ -104,7 +111,10 @@ class NativeNetworkAdapter {
   }
 
   removeEventListener(callback) {
-    if (!this.connection || typeof this.connection.removeEventListener !== 'function') {
+    if (
+      !this.connection ||
+      typeof this.connection.removeEventListener !== 'function'
+    ) {
       return;
     }
 
@@ -116,7 +126,7 @@ class NativeNetworkAdapter {
       effectiveType: '4g',
       downlink: 10,
       rtt: 100,
-      saveData: false
+      saveData: false,
     };
   }
 
@@ -169,7 +179,7 @@ class PerformanceNetworkAdapter {
       connectTime,
       responseTime,
       totalTime,
-      timestamp: now
+      timestamp: now,
     };
 
     this.samples.push(sample);
@@ -186,11 +196,13 @@ class PerformanceNetworkAdapter {
       return '4g'; // Default assumption
     }
 
-    const avgResponseTime = this.samples.reduce((sum, sample) =>
-      sum + sample.responseTime, 0) / this.samples.length;
+    const avgResponseTime =
+      this.samples.reduce((sum, sample) => sum + sample.responseTime, 0) /
+      this.samples.length;
 
-    const avgTotalTime = this.samples.reduce((sum, sample) =>
-      sum + sample.totalTime, 0) / this.samples.length;
+    const avgTotalTime =
+      this.samples.reduce((sum, sample) => sum + sample.totalTime, 0) /
+      this.samples.length;
 
     // Simple heuristic based on response times
     if (avgResponseTime > 2000 || avgTotalTime > 10000) {
@@ -208,11 +220,16 @@ class PerformanceNetworkAdapter {
     const networkType = this.estimateNetworkType();
 
     switch (networkType) {
-      case 'slow-2g': return 0.05;  // 50 Kbps
-      case '2g': return 0.1;       // 100 Kbps
-      case '3g': return 1.0;       // 1 Mbps
-      case '4g': return 10.0;      // 10 Mbps
-      default: return 1.0;
+      case 'slow-2g':
+        return 0.05; // 50 Kbps
+      case '2g':
+        return 0.1; // 100 Kbps
+      case '3g':
+        return 1.0; // 1 Mbps
+      case '4g':
+        return 10.0; // 10 Mbps
+      default:
+        return 1.0;
     }
   }
 
@@ -221,8 +238,9 @@ class PerformanceNetworkAdapter {
       return 100; // Default RTT
     }
 
-    const avgResponseTime = this.samples.reduce((sum, sample) =>
-      sum + sample.responseTime, 0) / this.samples.length;
+    const avgResponseTime =
+      this.samples.reduce((sum, sample) => sum + sample.responseTime, 0) /
+      this.samples.length;
 
     return Math.round(avgResponseTime / 2); // Approximate RTT
   }
@@ -232,7 +250,7 @@ class PerformanceNetworkAdapter {
       effectiveType: this.estimateNetworkType(),
       downlink: this.estimateDownlink(),
       rtt: this.estimateRTT(),
-      saveData: false
+      saveData: false,
     };
   }
 
@@ -269,7 +287,8 @@ class PerformanceNetworkAdapter {
  */
 class UserAgentNetworkAdapter {
   constructor() {
-    this.userAgent = typeof navigator !== 'undefined' ? navigator.userAgent : '';
+    this.userAgent =
+      typeof navigator !== 'undefined' ? navigator.userAgent : '';
     this.connectionType = this.detectConnectionType();
   }
 
@@ -301,27 +320,37 @@ class UserAgentNetworkAdapter {
       effectiveType: this.connectionType,
       downlink: this.estimateDownlink(),
       rtt: this.estimateRTT(),
-      saveData: false
+      saveData: false,
     };
   }
 
   estimateDownlink() {
     switch (this.connectionType) {
-      case 'slow-2g': return 0.05;
-      case '2g': return 0.1;
-      case '3g': return 1.0;
-      case '4g': return 5.0; // Conservative estimate for desktop
-      default: return 1.0;
+      case 'slow-2g':
+        return 0.05;
+      case '2g':
+        return 0.1;
+      case '3g':
+        return 1.0;
+      case '4g':
+        return 5.0; // Conservative estimate for desktop
+      default:
+        return 1.0;
     }
   }
 
   estimateRTT() {
     switch (this.connectionType) {
-      case 'slow-2g': return 2000;
-      case '2g': return 1200;
-      case '3g': return 300;
-      case '4g': return 100;
-      default: return 300;
+      case 'slow-2g':
+        return 2000;
+      case '2g':
+        return 1200;
+      case '3g':
+        return 300;
+      case '4g':
+        return 100;
+      default:
+        return 300;
     }
   }
 
@@ -460,7 +489,9 @@ class NativeCompressionAdapter {
     for (let i = 0; i < bytes.byteLength; i++) {
       binary += String.fromCharCode(bytes[i]);
     }
-    return typeof btoa !== 'undefined' ? btoa(binary) : Buffer.from(binary).toString('base64');
+    return typeof btoa !== 'undefined'
+      ? btoa(binary)
+      : Buffer.from(binary).toString('base64');
   }
 
   base64ToArrayBuffer(base64) {
@@ -482,8 +513,10 @@ class NativeCompressionAdapter {
   }
 
   isAvailable() {
-    return typeof CompressionStream !== 'undefined' &&
-           typeof DecompressionStream !== 'undefined';
+    return (
+      typeof CompressionStream !== 'undefined' &&
+      typeof DecompressionStream !== 'undefined'
+    );
   }
 }
 
@@ -507,7 +540,9 @@ class LZStringCompressionAdapter {
     }
 
     // For now, throw an error requiring LZ-String to be loaded
-    throw new Error('LZ-String library not found. Please include lz-string.min.js before using this library.');
+    throw new Error(
+      'LZ-String library not found. Please include lz-string.min.js before using this library.'
+    );
   }
 
   compress(data) {
@@ -552,5 +587,5 @@ export {
   UserAgentNetworkAdapter,
   CompressionAdapterFactory,
   NativeCompressionAdapter,
-  LZStringCompressionAdapter
+  LZStringCompressionAdapter,
 };

@@ -86,7 +86,7 @@ export default class FormatConverter {
    */
   toUrlSearchParams(data, options = {}) {
     const {
-      prefix = '',  // Changed to empty string to avoid prefixing simple objects
+      prefix = '', // Changed to empty string to avoid prefixing simple objects
       encode = true,
       arrayFormat = 'brackets', // 'brackets', 'indices', 'repeat'
     } = options;
@@ -121,7 +121,7 @@ export default class FormatConverter {
    */
   toFormData(data, options = {}) {
     const {
-      prefix = '',  // Changed to empty string to avoid prefixing simple objects
+      prefix = '', // Changed to empty string to avoid prefixing simple objects
       arrayFormat = 'brackets',
       includeNullValues = false,
     } = options;

@@ -16,5 +16,5 @@ export {
   PerformanceNetworkAdapter,
   UserAgentNetworkAdapter,
   NativeCompressionAdapter,
-  LZStringCompressionAdapter
+  LZStringCompressionAdapter,
 } from './network-adapters.js';

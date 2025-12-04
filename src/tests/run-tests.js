@@ -12,7 +12,7 @@ class TestRunner {
     this.results = {
       passed: 0,
       failed: 0,
-      total: 0
+      total: 0,
     };
   }
 
@@ -36,7 +36,9 @@ class TestRunner {
       }
     }
 
-    console.log(`\n📊 Test Results: ${this.results.passed}/${this.results.total} passed`);
+    console.log(
+      `\n📊 Test Results: ${this.results.passed}/${this.results.total} passed`
+    );
 
     if (this.results.failed > 0) {
       console.log(`❌ ${this.results.failed} tests failed`);
@@ -78,41 +80,68 @@ const runner = new TestRunner();
 runner.test('NetworkCompressionUtils should initialize', () => {
   const ncu = new NetworkCompressionUtils();
   runner.assertNotNull(ncu, 'NetworkCompressionUtils should be created');
-  runner.assert(typeof ncu.compress === 'function', 'Should have compress method');
-  runner.assert(typeof ncu.getNetworkInfo === 'function', 'Should have getNetworkInfo method');
+  runner.assert(
+    typeof ncu.compress === 'function',
+    'Should have compress method'
+  );
+  runner.assert(
+    typeof ncu.getNetworkInfo === 'function',
+    'Should have getNetworkInfo method'
+  );
 });
 
 runner.test('Basic compression should work', () => {
   const ncu = new NetworkCompressionUtils();
-  const testData = { message: 'Hello World', data: Array(100).fill('test').join(' ') };
+  const testData = {
+    message: 'Hello World',
+    data: Array(100).fill('test').join(' '),
+  };
 
   const result = ncu.compress({
     data: testData,
-    outputFormat: 'string'
+    outputFormat: 'string',
   });
 
   runner.assertNotNull(result, 'Compression result should not be null');
-  runner.assert(typeof result.compressed === 'boolean', 'Should have compressed property');
+  runner.assert(
+    typeof result.compressed === 'boolean',
+    'Should have compressed property'
+  );
   runner.assertNotNull(result.data, 'Should have data property');
-  runner.assert(typeof result.originalSize === 'number', 'Should have originalSize property');
+  runner.assert(
+    typeof result.originalSize === 'number',
+    'Should have originalSize property'
+  );
   runner.assert(result.originalSize > 0, 'Original size should be positive');
 });
 
 runner.test('Configuration management should work', () => {
   const ncu = new NetworkCompressionUtils({
     enableAutoCompression: false,
-    defaultFormat: 'formdata'
+    defaultFormat: 'formdata',
   });
 
   const config = ncu.getConfig();
-  runner.assertEqual(config.enableAutoCompression, false, 'Configuration should be applied');
-  runner.assertEqual(config.defaultFormat, 'formdata', 'Default format should be set');
+  runner.assertEqual(
+    config.enableAutoCompression,
+    false,
+    'Configuration should be applied'
+  );
+  runner.assertEqual(
+    config.defaultFormat,
+    'formdata',
+    'Default format should be set'
+  );
 
   const success = ncu.updateConfig({ enableAutoCompression: true });
   runner.assert(success, 'Configuration update should succeed');
 
   const updatedConfig = ncu.getConfig();
-  runner.assertEqual(updatedConfig.enableAutoCompression, true, 'Configuration should be updated');
+  runner.assertEqual(
+    updatedConfig.enableAutoCompression,
+    true,
+    'Configuration should be updated'
+  );
 });
 
 runner.test('Network info should be accessible', () => {
@@ -122,9 +151,14 @@ runner.test('Network info should be accessible', () => {
   runner.assertNotNull(networkInfo, 'Network info should not be null');
 
   if (networkInfo) {
-    runner.assertNotNull(networkInfo.effectiveType, 'Should have effectiveType');
-    runner.assert(['slow-2g', '2g', '3g', '4g'].includes(networkInfo.effectiveType),
-      'effectiveType should be valid');
+    runner.assertNotNull(
+      networkInfo.effectiveType,
+      'Should have effectiveType'
+    );
+    runner.assert(
+      ['slow-2g', '2g', '3g', '4g'].includes(networkInfo.effectiveType),
+      'effectiveType should be valid'
+    );
   }
 });
 
@@ -135,28 +169,40 @@ runner.test('Format conversion should work', () => {
   // Test URLSearchParams format
   const urlResult = ncu.compress({
     data: testData,
-    outputFormat: 'urlsearch'
+    outputFormat: 'urlsearch',
   });
 
-  runner.assertEqual(urlResult.outputFormat, 'urlsearch', 'Should output urlsearch format');
+  runner.assertEqual(
+    urlResult.outputFormat,
+    'urlsearch',
+    'Should output urlsearch format'
+  );
   runner.assertNotNull(urlResult.data, 'Should have data');
 
   // Test FormData format
   const formDataResult = ncu.compress({
     data: testData,
-    outputFormat: 'formdata'
+    outputFormat: 'formdata',
   });
 
-  runner.assertEqual(formDataResult.outputFormat, 'formdata', 'Should output formdata format');
+  runner.assertEqual(
+    formDataResult.outputFormat,
+    'formdata',
+    'Should output formdata format'
+  );
   runner.assertNotNull(formDataResult.data, 'Should have data');
 
   // Test string format
   const stringResult = ncu.compress({
     data: testData,
-    outputFormat: 'string'
+    outputFormat: 'string',
   });
 
-  runner.assertEqual(stringResult.outputFormat, 'string', 'Should output string format');
+  runner.assertEqual(
+    stringResult.outputFormat,
+    'string',
+    'Should output string format'
+  );
   runner.assert(typeof stringResult.data === 'string', 'Data should be string');
 });
 
@@ -164,13 +210,19 @@ runner.test('Browser compatibility methods should work', () => {
   const ncu = new NetworkCompressionUtils();
 
   const compatibility = ncu.getBrowserCompatibility();
-  runner.assertNotNull(compatibility, 'Compatibility report should not be null');
+  runner.assertNotNull(
+    compatibility,
+    'Compatibility report should not be null'
+  );
   runner.assertNotNull(compatibility.browser, 'Should have browser info');
   runner.assertNotNull(compatibility.features, 'Should have features info');
 
   const support = ncu.getBrowserSupport();
   runner.assertNotNull(support, 'Browser support should not be null');
-  runner.assert(typeof support.supported === 'boolean', 'Should have supported property');
+  runner.assert(
+    typeof support.supported === 'boolean',
+    'Should have supported property'
+  );
   runner.assertNotNull(support.level, 'Should have support level');
 
   const warnings = ncu.getCompatibilityWarnings();
@@ -188,8 +240,14 @@ runner.test('Performance statistics should work', () => {
 
   const stats = ncu.getCompressionStats();
   runner.assertNotNull(stats, 'Stats should not be null');
-  runner.assert(typeof stats.totalCompressions === 'number', 'Should have totalCompressions');
-  runner.assert(stats.totalCompressions >= 3, 'Should track at least 3 compressions');
+  runner.assert(
+    typeof stats.totalCompressions === 'number',
+    'Should have totalCompressions'
+  );
+  runner.assert(
+    stats.totalCompressions >= 3,
+    'Should track at least 3 compressions'
+  );
 
   // Reset stats
   ncu.resetStats();
@@ -203,7 +261,10 @@ runner.test('System status should be comprehensive', () => {
   const status = ncu.getSystemStatus();
   runner.assertNotNull(status, 'System status should not be null');
   runner.assertNotNull(status.network, 'Should have network status');
-  runner.assertNotNull(status.configuration, 'Should have configuration status');
+  runner.assertNotNull(
+    status.configuration,
+    'Should have configuration status'
+  );
   runner.assertNotNull(status.compression, 'Should have compression status');
   runner.assertNotNull(status.formats, 'Should have formats status');
 });
@@ -214,7 +275,7 @@ runner.test('Edge cases should be handled gracefully', () => {
   // Test with empty data
   const emptyResult = ncu.compress({
     data: '',
-    outputFormat: 'string'
+    outputFormat: 'string',
   });
   runner.assertNotNull(emptyResult, 'Empty data should be handled');
 
@@ -222,7 +283,7 @@ runner.test('Edge cases should be handled gracefully', () => {
   try {
     ncu.compress({
       data: null,
-      outputFormat: 'string'
+      outputFormat: 'string',
     });
     runner.assert(false, 'Should throw error for null data');
   } catch (error) {
@@ -233,7 +294,7 @@ runner.test('Edge cases should be handled gracefully', () => {
   try {
     ncu.compress({
       data: 'test',
-      outputFormat: 'invalid'
+      outputFormat: 'invalid',
     });
     // Should fallback to default format
   } catch (error) {
@@ -246,27 +307,35 @@ runner.test('Large data compression should work', () => {
 
   // Create large test data
   const largeData = {
-    data: Array(1000).fill('Lorem ipsum dolor sit amet, consectetur adipiscing elit.').join(' '),
+    data: Array(1000)
+      .fill('Lorem ipsum dolor sit amet, consectetur adipiscing elit.')
+      .join(' '),
     metadata: {
       timestamp: Date.now(),
       version: '1.0.0',
       author: 'test',
-      tags: Array(100).fill('tag')
-    }
+      tags: Array(100).fill('tag'),
+    },
   };
 
   const result = ncu.compress({
     data: largeData,
     outputFormat: 'string',
-    forceCompression: true
+    forceCompression: true,
   });
 
   runner.assertNotNull(result, 'Large data compression should work');
   runner.assert(result.originalSize > 1000, 'Original size should be large');
 
   if (result.compressed) {
-    runner.assert(result.compressedSize < result.originalSize, 'Compressed size should be smaller');
-    runner.assert(result.compressionRatio > 0, 'Compression ratio should be positive');
+    runner.assert(
+      result.compressedSize < result.originalSize,
+      'Compressed size should be smaller'
+    );
+    runner.assert(
+      result.compressionRatio > 0,
+      'Compression ratio should be positive'
+    );
   }
 });
 

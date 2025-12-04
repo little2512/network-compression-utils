@@ -32,27 +32,31 @@ class BrowserCompatibilityManager {
       blob: typeof Blob !== 'undefined',
 
       // Event handling
-      addEventListener: typeof EventTarget !== 'undefined' &&
-                       typeof EventTarget.prototype.addEventListener === 'function',
+      addEventListener:
+        typeof EventTarget !== 'undefined' &&
+        typeof EventTarget.prototype.addEventListener === 'function',
 
       // JSON support
-      json: typeof JSON !== 'undefined' &&
-            typeof JSON.stringify === 'function' &&
-            typeof JSON.parse === 'function',
+      json:
+        typeof JSON !== 'undefined' &&
+        typeof JSON.stringify === 'function' &&
+        typeof JSON.parse === 'function',
 
       // Console methods
-      console: typeof console !== 'undefined' &&
-              typeof console.log === 'function' &&
-              typeof console.warn === 'function' &&
-              typeof console.error === 'function',
+      console:
+        typeof console !== 'undefined' &&
+        typeof console.log === 'function' &&
+        typeof console.warn === 'function' &&
+        typeof console.error === 'function',
 
       // Storage APIs
       localStorage: typeof localStorage !== 'undefined',
       sessionStorage: typeof sessionStorage !== 'undefined',
 
       // Performance API
-      performance: typeof performance !== 'undefined' &&
-                  typeof performance.now === 'function',
+      performance:
+        typeof performance !== 'undefined' &&
+        typeof performance.now === 'function',
 
       // Async operations
       promise: typeof Promise !== 'undefined',
@@ -62,7 +66,7 @@ class BrowserCompatibilityManager {
 
       // Text encoding
       textEncoder: typeof TextEncoder !== 'undefined',
-      textDecoder: typeof TextDecoder !== 'undefined'
+      textDecoder: typeof TextDecoder !== 'undefined',
     };
 
     return features;
@@ -74,7 +78,10 @@ class BrowserCompatibilityManager {
   initializePolyfills() {
     // URLSearchParams polyfill
     if (!this.features.urlSearchParams) {
-      this.polyfills.set('urlSearchParams', this.createURLSearchParamsPolyfill());
+      this.polyfills.set(
+        'urlSearchParams',
+        this.createURLSearchParamsPolyfill()
+      );
     }
 
     // FormData polyfill
@@ -168,7 +175,7 @@ class BrowserCompatibilityManager {
 
       forEach(callback, thisArg) {
         this.params.forEach((values, name) => {
-          values.forEach(value => {
+          values.forEach((value) => {
             callback.call(thisArg, value, name, this);
           });
         });
@@ -177,7 +184,7 @@ class BrowserCompatibilityManager {
       toString() {
         const pairs = [];
         this.params.forEach((values, name) => {
-          values.forEach(value => {
+          values.forEach((value) => {
             pairs.push(
               `${encodeURIComponent(name)}=${encodeURIComponent(value)}`
             );
@@ -203,7 +210,10 @@ class BrowserCompatibilityManager {
             if (element.name && !element.disabled) {
               if (element.type === 'file' && element.files.length > 0) {
                 this.append(element.name, element.files[0]);
-              } else if (element.type !== 'file' && element.type !== 'checkbox' || element.checked) {
+              } else if (
+                (element.type !== 'file' && element.type !== 'checkbox') ||
+                element.checked
+              ) {
                 this.append(element.name, element.value);
               }
             }
@@ -240,7 +250,7 @@ class BrowserCompatibilityManager {
 
       forEach(callback, thisArg) {
         this.data.forEach((values, name) => {
-          values.forEach(value => {
+          values.forEach((value) => {
             callback.call(thisArg, value, name, this);
           });
         });
@@ -259,8 +269,8 @@ class BrowserCompatibilityManager {
     return {
       now: () => Date.now() - startTime,
       timing: {
-        navigationStart: startTime
-      }
+        navigationStart: startTime,
+      },
     };
   }
 
@@ -296,7 +306,7 @@ class BrowserCompatibilityManager {
         } catch (e) {
           // Silent fail
         }
-      }
+      },
     };
   }
 
@@ -308,10 +318,12 @@ class BrowserCompatibilityManager {
       stringify: (obj) => {
         if (obj === null) return 'null';
         if (obj === undefined) return 'undefined';
-        if (typeof obj === 'string') return '"' + obj.replace(/"/g, '\\"') + '"';
-        if (typeof obj === 'number' || typeof obj === 'boolean') return String(obj);
+        if (typeof obj === 'string')
+          return '"' + obj.replace(/"/g, '\\"') + '"';
+        if (typeof obj === 'number' || typeof obj === 'boolean')
+          return String(obj);
         if (Array.isArray(obj)) {
-          return '[' + obj.map(item => this.stringify(item)).join(',') + ']';
+          return '[' + obj.map((item) => this.stringify(item)).join(',') + ']';
         }
         if (typeof obj === 'object') {
           const pairs = [];
@@ -329,7 +341,7 @@ class BrowserCompatibilityManager {
         } catch (e) {
           throw new Error('Invalid JSON');
         }
-      }
+      },
     };
   }
 
@@ -347,7 +359,7 @@ class BrowserCompatibilityManager {
           if (this.state === 'pending') {
             this.state = 'fulfilled';
             this.value = value;
-            this.handlers.forEach(handler => {
+            this.handlers.forEach((handler) => {
               if (handler.onFulfill) {
                 setTimeout(() => handler.onFulfill(value), 0);
               }
@@ -359,7 +371,7 @@ class BrowserCompatibilityManager {
           if (this.state === 'pending') {
             this.state = 'rejected';
             this.value = reason;
-            this.handlers.forEach(handler => {
+            this.handlers.forEach((handler) => {
               if (handler.onReject) {
                 setTimeout(() => handler.onReject(reason), 0);
               }
@@ -398,7 +410,7 @@ class BrowserCompatibilityManager {
               } else {
                 reject(reason);
               }
-            }
+            },
           });
 
           if (this.state !== 'pending') {
@@ -451,7 +463,10 @@ class BrowserCompatibilityManager {
     const globalScope = typeof window !== 'undefined' ? window : global;
 
     // Apply URLSearchParams polyfill
-    if (!this.features.urlSearchParams && this.polyfills.has('urlSearchParams')) {
+    if (
+      !this.features.urlSearchParams &&
+      this.polyfills.has('urlSearchParams')
+    ) {
       globalScope.URLSearchParams = this.polyfills.get('urlSearchParams');
     }
 
@@ -489,7 +504,7 @@ class BrowserCompatibilityManager {
       browser: this.getBrowserInfo(),
       features: { ...this.features },
       polyfills: Array.from(this.polyfills.keys()),
-      recommendations: []
+      recommendations: [],
     };
 
     // Add recommendations based on missing features
@@ -497,7 +512,7 @@ class BrowserCompatibilityManager {
       report.recommendations.push({
         feature: 'Network Information API',
         impact: 'Network detection will use fallback methods',
-        suggestion: 'Consider using a network quality estimation library'
+        suggestion: 'Consider using a network quality estimation library',
       });
     }
 
@@ -505,7 +520,7 @@ class BrowserCompatibilityManager {
       report.recommendations.push({
         feature: 'Compression Stream API',
         impact: 'Will use LZ-String library instead of native compression',
-        suggestion: 'No action required - library handles this automatically'
+        suggestion: 'No action required - library handles this automatically',
       });
     }
 
@@ -513,7 +528,8 @@ class BrowserCompatibilityManager {
       report.recommendations.push({
         feature: 'Promise API',
         impact: 'Async operations will use polyfill implementation',
-        suggestion: 'Consider upgrading to a modern browser for better performance'
+        suggestion:
+          'Consider upgrading to a modern browser for better performance',
       });
     }
 
@@ -524,7 +540,10 @@ class BrowserCompatibilityManager {
    * Get browser information
    */
   getBrowserInfo() {
-    const userAgent = typeof navigator !== 'undefined' && navigator.userAgent ? navigator.userAgent : 'Unknown';
+    const userAgent =
+      typeof navigator !== 'undefined' && navigator.userAgent
+        ? navigator.userAgent
+        : 'Unknown';
 
     // Basic browser detection
     let browser = 'Unknown';
@@ -551,8 +570,10 @@ class BrowserCompatibilityManager {
       name: browser,
       version: version,
       userAgent: userAgent,
-      supportedFeatures: Object.keys(this.features).filter(key => this.features[key]).length,
-      totalFeatures: Object.keys(this.features).length
+      supportedFeatures: Object.keys(this.features).filter(
+        (key) => this.features[key]
+      ).length,
+      totalFeatures: Object.keys(this.features).length,
     };
   }
 
@@ -561,25 +582,33 @@ class BrowserCompatibilityManager {
    */
   isBrowserSupported() {
     const requiredFeatures = [
-      'json',        // Required for data serialization
-      'console',     // Required for logging
-      'addEventListener' // Required for event handling
+      'json', // Required for data serialization
+      'console', // Required for logging
+      'addEventListener', // Required for event handling
     ];
 
-    const optionalButRecommended = [
-      'urlSearchParams',
-      'formData',
-      'promise'
-    ];
+    const optionalButRecommended = ['urlSearchParams', 'formData', 'promise'];
 
-    const hasRequired = requiredFeatures.every(feature => this.features[feature]);
-    const hasRecommended = optionalButRecommended.filter(feature => this.features[feature]).length;
+    const hasRequired = requiredFeatures.every(
+      (feature) => this.features[feature]
+    );
+    const hasRecommended = optionalButRecommended.filter(
+      (feature) => this.features[feature]
+    ).length;
 
     return {
       supported: hasRequired,
-      level: hasRequired ? (hasRecommended >= 2 ? 'full' : 'basic') : 'unsupported',
-      missingRequired: requiredFeatures.filter(feature => !this.features[feature]),
-      missingRecommended: optionalButRecommended.filter(feature => !this.features[feature])
+      level: hasRequired
+        ? hasRecommended >= 2
+          ? 'full'
+          : 'basic'
+        : 'unsupported',
+      missingRequired: requiredFeatures.filter(
+        (feature) => !this.features[feature]
+      ),
+      missingRecommended: optionalButRecommended.filter(
+        (feature) => !this.features[feature]
+      ),
     };
   }
 
@@ -590,11 +619,15 @@ class BrowserCompatibilityManager {
     const warnings = [];
 
     if (!this.features.networkInformation) {
-      warnings.push('Network Information API not available - using fallback network detection');
+      warnings.push(
+        'Network Information API not available - using fallback network detection'
+      );
     }
 
     if (!this.features.compressionStream) {
-      warnings.push('Native compression not available - using LZ-String library');
+      warnings.push(
+        'Native compression not available - using LZ-String library'
+      );
     }
 
     if (!this.features.urlSearchParams) {
@@ -606,7 +639,9 @@ class BrowserCompatibilityManager {
     }
 
     if (!this.features.promise) {
-      warnings.push('Promise not available - using polyfill (reduced performance)');
+      warnings.push(
+        'Promise not available - using polyfill (reduced performance)'
+      );
     }
 
     if (!this.features.performance) {
