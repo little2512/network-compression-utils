@@ -1,0 +1,280 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Browser Compatibility Demo</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            line-height: 1.6;
+        }
+        .status {
+            padding: 10px;
+            margin: 10px 0;
+            border-radius: 5px;
+        }
+        .supported {
+            background-color: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+        .not-supported {
+            background-color: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+        .warning {
+            background-color: #fff3cd;
+            color: #856404;
+            border: 1px solid #ffeaa7;
+        }
+        .code-block {
+            background-color: #f8f9fa;
+            padding: 15px;
+            border-radius: 5px;
+            border: 1px solid #e9ecef;
+            font-family: 'Courier New', monospace;
+            white-space: pre-wrap;
+            margin: 10px 0;
+        }
+        button {
+            background-color: #007bff;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        button:hover {
+            background-color: #0056b3;
+        }
+        .result {
+            margin: 10px 0;
+            padding: 10px;
+            background-color: #e9ecef;
+            border-radius: 5px;
+        }
+    </style>
+</head>
+<body>
+    <h1>Browser Compatibility Demo</h1>
+    <p>This demo tests the browser compatibility features of the Network Compression Utils library.</p>
+
+    <div id="compatibility-report">
+        <h2>Browser Compatibility Report</h2>
+        <div id="browser-info"></div>
+        <div id="features-status"></div>
+        <div id="polyfills-status"></div>
+        <div id="recommendations"></div>
+    </div>
+
+    <div id="functionality-tests">
+        <h2>Functionality Tests</h2>
+
+        <button onclick="testNetworkDetection()">Test Network Detection</button>
+        <button onclick="testCompression()">Test Compression</button>
+        <button onclick="testFormatConversion()">Test Format Conversion</button>
+        <button onclick="testMainLibrary()">Test Main Library</button>
+
+        <div id="test-results"></div>
+    </div>
+
+    <script src="dist/index.umd.js"></script>
+    <script>
+        // Global variables
+        let ncu = null;
+        let testResults = [];
+
+        function addResult(message, type = 'info') {
+            testResults.push({ message, type, timestamp: new Date() });
+            updateTestResults();
+        }
+
+        function updateTestResults() {
+            const container = document.getElementById('test-results');
+            container.innerHTML = testResults.map(result => {
+                let className = 'result';
+                if (result.type === 'success') className += ' supported';
+                if (result.type === 'error') className += ' not-supported';
+                if (result.type === 'warning') className += ' warning';
+
+                return `<div class="${className}">
+                    <strong>[${result.type.toUpperCase()}]</strong> ${result.message}
+                    <br><small>${result.timestamp.toLocaleTimeString()}</small>
+                </div>`;
+            }).join('');
+        }
+
+        function showCompatibilityReport() {
+            try {
+                ncu = new NetworkCompressionUtils({ enableLogging: false });
+
+                const browserInfo = ncu.getBrowserCompatibility();
+                const browserSupport = ncu.getBrowserSupport();
+                const warnings = ncu.getCompatibilityWarnings();
+                const polyfillStatus = ncu.getPolyfillStatus();
+
+                // Show browser info
+                document.getElementById('browser-info').innerHTML = `
+                    <div class="status ${browserSupport.supported ? 'supported' : 'not-supported'}">
+                        <strong>Browser:</strong> ${browserInfo.browser.name} ${browserInfo.browser.version}<br>
+                        <strong>Support Level:</strong> ${browserSupport.level}<br>
+                        <strong>Features:</strong> ${browserInfo.browser.supportedFeatures}/${browserInfo.browser.totalFeatures} available
+                    </div>
+                `;
+
+                // Show features status
+                const featuresHtml = Object.entries(browserInfo.features)
+                    .map(([feature, supported]) => `
+                        <div class="status ${supported ? 'supported' : 'not-supported'}">
+                            ${feature}: ${supported ? '✅ Available' : '❌ Not Available'}
+                        </div>
+                    `).join('');
+                document.getElementById('features-status').innerHTML = '<h3>Feature Status:</h3>' + featuresHtml;
+
+                // Show polyfill status
+                document.getElementById('polyfills-status').innerHTML = `
+                    <div class="status ${polyfillStatus.applied > 0 ? 'warning' : 'supported'}">
+                        <strong>Polyfills Applied:</strong> ${polyfillStatus.applied}<br>
+                        <strong>Features:</strong> ${polyfillStatus.features.join(', ') || 'None'}
+                    </div>
+                `;
+
+                // Show recommendations
+                if (browserInfo.recommendations.length > 0) {
+                    const recommendationsHtml = browserInfo.recommendations
+                        .map(rec => `
+                            <div class="status warning">
+                                <strong>${rec.feature}:</strong> ${rec.impact}<br>
+                                <em>Suggestion: ${rec.suggestion}</em>
+                            </div>
+                        `).join('');
+                    document.getElementById('recommendations').innerHTML = '<h3>Recommendations:</h3>' + recommendationsHtml;
+                }
+
+                // Show warnings
+                warnings.forEach(warning => {
+                    addResult(warning, 'warning');
+                });
+
+                addResult('Compatibility report loaded successfully', 'success');
+
+            } catch (error) {
+                addResult(`Failed to load compatibility report: ${error.message}`, 'error');
+            }
+        }
+
+        function testNetworkDetection() {
+            try {
+                const networkInfo = ncu.getNetworkInfo();
+                const qualityScore = ncu.getNetworkQualityScore();
+                const isSlow = ncu.isSlowNetwork();
+
+                addResult(`Network detection successful: ${JSON.stringify(networkInfo)}`, 'success');
+                addResult(`Network quality score: ${qualityScore}/100`, 'info');
+                addResult(`Is slow network: ${isSlow}`, 'info');
+
+            } catch (error) {
+                addResult(`Network detection failed: ${error.message}`, 'error');
+            }
+        }
+
+        function testCompression() {
+            try {
+                const testData = {
+                    message: "Hello, this is a test message for compression!",
+                    data: Array(100).fill("test data").join(" "),
+                    timestamp: Date.now()
+                };
+
+                const result = ncu.compress({
+                    data: testData,
+                    outputFormat: 'string'
+                });
+
+                addResult(`Compression test: ${JSON.stringify(result, null, 2)}`, 'success');
+
+                if (result.compressed) {
+                    const savings = result.originalSize - result.compressedSize;
+                    const percentSavings = ((savings / result.originalSize) * 100).toFixed(1);
+                    addResult(`Space saved: ${savings} bytes (${percentSavings}%)`, 'info');
+                }
+
+            } catch (error) {
+                addResult(`Compression test failed: ${error.message}`, 'error');
+            }
+        }
+
+        function testFormatConversion() {
+            try {
+                const testData = {
+                    name: "John Doe",
+                    email: "john@example.com",
+                    preferences: {
+                        theme: "dark",
+                        notifications: true
+                    },
+                    tags: ["developer", "javascript", "compression"]
+                };
+
+                // Test URLSearchParams format
+                const urlResult = ncu.compress({
+                    data: testData,
+                    outputFormat: 'urlsearch'
+                });
+                addResult(`URLSearchParams format: ${urlResult.data.toString()}`, 'success');
+
+                // Test FormData format
+                const formDataResult = ncu.compress({
+                    data: testData,
+                    outputFormat: 'formdata'
+                });
+                addResult(`FormData format created successfully`, 'success');
+
+                // Test string format
+                const stringResult = ncu.compress({
+                    data: testData,
+                    outputFormat: 'string'
+                });
+                addResult(`String format length: ${stringResult.data.length} characters`, 'info');
+
+            } catch (error) {
+                addResult(`Format conversion test failed: ${error.message}`, 'error');
+            }
+        }
+
+        function testMainLibrary() {
+            try {
+                // Test configuration
+                const config = ncu.getConfig();
+                addResult(`Current config loaded: autoCompression=${config.enableAutoCompression}`, 'success');
+
+                // Test system status
+                const status = ncu.getSystemStatus();
+                addResult(`System status: Network=${status.network.type}, Compression ops=${status.compression.totalOperations}`, 'success');
+
+                // Test format recommendation
+                const recommendation = ncu.recommendFormat({ test: "data" }, { usage: "api" });
+                addResult(`Recommended format: ${recommendation}`, 'info');
+
+                // Test compression statistics
+                const stats = ncu.getCompressionStats();
+                addResult(`Compression stats: ${JSON.stringify(stats)}`, 'info');
+
+            } catch (error) {
+                addResult(`Main library test failed: ${error.message}`, 'error');
+            }
+        }
+
+        // Initialize on page load
+        document.addEventListener('DOMContentLoaded', function() {
+            showCompatibilityReport();
+        });
+    </script>
+</body>
+</html>

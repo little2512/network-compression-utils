@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Network Detection Example</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            line-height: 1.6;
+        }
+        .network-info {
+            background: #f5f5f5;
+            padding: 15px;
+            border-radius: 5px;
+            margin: 10px 0;
+        }
+        .quality-score {
+            font-weight: bold;
+            font-size: 1.2em;
+        }
+        .slow { color: #d32f2f; }
+        .medium { color: #f57c00; }
+        .fast { color: #388e3c; }
+        .changes {
+            background: #e8f5e8;
+            padding: 15px;
+            border-radius: 5px;
+            margin: 10px 0;
+            border: 1px solid #4caf50;
+        }
+        .timestamp {
+            color: #666;
+            font-size: 0.9em;
+        }
+    </style>
+</head>
+<body>
+    <h1>Network Detection Example</h1>
+    <p>This example demonstrates the network detection capabilities of the Network Compression Utils library.</p>
+
+    <div id="current-network">
+        <h2>Current Network Information</h2>
+        <div class="network-info" id="network-details">
+            Loading network information...
+        </div>
+    </div>
+
+    <div id="network-changes">
+        <h2>Network Changes</h2>
+        <div id="changes-log">
+            <p>Network changes will be logged here...</p>
+        </div>
+    </div>
+
+    <div id="manual-check">
+        <h2>Manual Network Check</h2>
+        <button onclick="checkNetwork()">Check Network Now</button>
+    </div>
+
+    <script type="module">
+        // Import the NetworkDetector
+        import NetworkDetector from '../dist/index.esm.js';
+
+        // Create a network detector instance
+        const networkDetector = new NetworkDetector();
+
+        // Function to update network information display
+        function updateNetworkDisplay(networkInfo) {
+            const detailsElement = document.getElementById('network-details');
+
+            if (!networkInfo) {
+                detailsElement.innerHTML = '<p>Network information not available</p>';
+                return;
+            }
+
+            const qualityScore = networkDetector.getNetworkQualityScore(networkInfo);
+            const isSlow = networkDetector.isSlowNetwork(networkInfo);
+            const isFast = networkDetector.isFastNetwork(networkInfo);
+            const description = networkDetector.getNetworkDescription(networkInfo);
+
+            let qualityClass = 'medium';
+            if (qualityScore >= 70) qualityClass = 'fast';
+            else if (qualityScore <= 40) qualityClass = 'slow';
+
+            detailsElement.innerHTML = `
+                <p><strong>Network Type:</strong> ${networkInfo.effectiveType.toUpperCase()}</p>
+                <p><strong>Description:</strong> ${description}</p>
+                <p><strong>Quality Score:</strong> <span class="quality-score ${qualityClass}">${qualityScore}/100</span></p>
+                <p><strong>Speed Assessment:</strong> ${isSlow ? 'Slow Network' : isFast ? 'Fast Network' : 'Medium Network'}</p>
+                ${networkInfo.downlink ? `<p><strong>Downlink:</strong> ${networkInfo.downlink} Mbps</p>` : ''}
+                ${networkInfo.rtt ? `<p><strong>RTT:</strong> ${networkInfo.rtt} ms</p>` : ''}
+                ${networkInfo.saveData !== undefined ? `<p><strong>Data Saver:</strong> ${networkInfo.saveData ? 'Enabled' : 'Disabled'}</p>` : ''}
+                <p class="timestamp">Last updated: ${new Date().toLocaleTimeString()}</p>
+            `;
+        }
+
+        // Function to log network changes
+        function logNetworkChange(networkInfo) {
+            const changesLog = document.getElementById('changes-log');
+            const timestamp = new Date().toLocaleTimeString();
+
+            const changeEntry = document.createElement('div');
+            changeEntry.className = 'changes';
+            changeEntry.innerHTML = `
+                <p><strong>Network changed at ${timestamp}</strong></p>
+                <p>Type: ${networkInfo.effectiveType} | Score: ${networkDetector.getNetworkQualityScore(networkInfo)}/100 | ${networkDetector.getNetworkDescription(networkInfo)}</p>
+            `;
+
+            // Insert at the beginning
+            changesLog.insertBefore(changeEntry, changesLog.firstChild);
+
+            // Keep only last 5 changes
+            while (changesLog.children.length > 5) {
+                changesLog.removeChild(changesLog.lastChild);
+            }
+        }
+
+        // Initial network check
+        function checkNetwork() {
+            console.log('Checking network...');
+            const networkInfo = networkDetector.getNetworkInfo();
+            updateNetworkDisplay(networkInfo);
+            console.log('Network info:', networkInfo);
+        }
+
+        // Set up network change listener
+        networkDetector.addEventListener((networkInfo) => {
+            console.log('Network changed:', networkInfo);
+            updateNetworkDisplay(networkInfo);
+            logNetworkChange(networkInfo);
+        });
+
+        // Initial check
+        setTimeout(checkNetwork, 100);
+
+        // Make checkNetwork function available globally
+        window.checkNetwork = checkNetwork;
+
+        // Add periodic network checks for demonstration
+        setInterval(checkNetwork, 30000); // Check every 30 seconds
+
+        console.log('Network Detection Example initialized');
+        console.log('NetworkDetector API available:', networkDetector.isNetworkInformationAPIAvailable());
+    </script>
+</body>
+</html>

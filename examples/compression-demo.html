@@ -1,0 +1,641 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Compression Demo</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            line-height: 1.6;
+        }
+        .container {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+        }
+        .section {
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            border: 1px solid #dee2e6;
+        }
+        .section h3 {
+            margin-top: 0;
+            color: #495057;
+        }
+        .form-group {
+            margin-bottom: 15px;
+        }
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+        }
+        textarea, select, input {
+            width: 100%;
+            padding: 8px;
+            border: 1px solid #ced4da;
+            border-radius: 4px;
+            box-sizing: border-box;
+            font-family: monospace;
+        }
+        textarea {
+            height: 100px;
+            resize: vertical;
+        }
+        button {
+            background: #007bff;
+            color: white;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            margin-right: 10px;
+            margin-bottom: 10px;
+        }
+        button:hover {
+            background: #0056b3;
+        }
+        button:disabled {
+            background: #6c757d;
+            cursor: not-allowed;
+        }
+        .button-secondary {
+            background: #6c757d;
+        }
+        .button-secondary:hover {
+            background: #545b62;
+        }
+        .button-success {
+            background: #28a745;
+        }
+        .button-success:hover {
+            background: #1e7e34;
+        }
+        .result {
+            background: #ffffff;
+            padding: 15px;
+            border-radius: 4px;
+            margin-top: 15px;
+            border: 1px solid #dee2e6;
+            font-family: monospace;
+            font-size: 12px;
+            white-space: pre-wrap;
+            max-height: 300px;
+            overflow-y: auto;
+        }
+        .stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 10px;
+            margin-top: 15px;
+        }
+        .stat-item {
+            background: #e9ecef;
+            padding: 10px;
+            border-radius: 4px;
+            text-align: center;
+        }
+        .stat-label {
+            font-size: 0.8em;
+            color: #6c757d;
+        }
+        .stat-value {
+            font-size: 1.2em;
+            font-weight: bold;
+            color: #495057;
+        }
+        .success { color: #28a745; }
+        .warning { color: #ffc107; }
+        .error { color: #dc3545; }
+        .comparison-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 15px;
+            margin-top: 15px;
+        }
+        .algorithm-result {
+            background: #ffffff;
+            padding: 15px;
+            border-radius: 4px;
+            border: 1px solid #dee2e6;
+        }
+        .algorithm-result h4 {
+            margin-top: 0;
+            color: #495057;
+        }
+        .progress-bar {
+            width: 100%;
+            height: 20px;
+            background: #e9ecef;
+            border-radius: 10px;
+            overflow: hidden;
+            margin: 10px 0;
+        }
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #28a745, #20c997);
+            transition: width 0.3s ease;
+        }
+    </style>
+</head>
+<body>
+    <h1>Compression Demo</h1>
+    <p>This example demonstrates the compression capabilities of the Network Compression Utils library.</p>
+
+    <div class="container">
+        <!-- Data Input Section -->
+        <div class="section">
+            <h3>Data Input</h3>
+
+            <div class="form-group">
+                <label for="data-type">Data Type:</label>
+                <select id="data-type">
+                    <option value="string">String</option>
+                    <option value="json">JSON Object</option>
+                    <option value="array">JSON Array</option>
+                    <option value="sample">Sample Data</option>
+                    <option value="large">Large Data Set</option>
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label for="input-data">Input Data:</label>
+                <textarea id="input-data" placeholder="Enter data to compress or select a data type above..."></textarea>
+            </div>
+
+            <div class="form-group">
+                <label for="algorithm">Compression Algorithm:</label>
+                <select id="algorithm">
+                    <option value="lz-string">LZ-String</option>
+                    <option value="none">None (No Compression)</option>
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label>
+                    <input type="checkbox" id="prefer-smallest" checked> Prefer Smallest Result
+                </label>
+                <label>
+                    <input type="checkbox" id="enable-fallback" checked> Enable Fallback
+                </label>
+            </div>
+
+            <button onclick="compressData()">Compress Data</button>
+            <button onclick="decompressData()" class="button-secondary" disabled>Decompress</button>
+            <button onclick="clearData()" class="button-secondary">Clear</button>
+            <button onclick="loadSampleData()" class="button-success">Load Sample Data</button>
+        </div>
+
+        <!-- Compression Results -->
+        <div class="section">
+            <h3>Compression Results</h3>
+            <div id="compression-result" class="result">Results will appear here...</div>
+
+            <div id="compression-stats" class="stats" style="display: none;">
+                <div class="stat-item">
+                    <div class="stat-label">Original Size</div>
+                    <div class="stat-value" id="stat-original-size">-</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-label">Compressed Size</div>
+                    <div class="stat-value" id="stat-compressed-size">-</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-label">Compression Ratio</div>
+                    <div class="stat-value" id="stat-compression-ratio">-</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-label">Time Taken</div>
+                    <div class="stat-value" id="stat-time">-</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-label">Algorithm</div>
+                    <div class="stat-value" id="stat-algorithm">-</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-label">Status</div>
+                    <div class="stat-value" id="stat-status">-</div>
+                </div>
+            </div>
+
+            <div class="progress-bar">
+                <div class="progress-fill" id="compression-progress" style="width: 0%;"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Algorithm Comparison -->
+    <div class="section">
+        <h3>Algorithm Comparison</h3>
+        <button onclick="compareAlgorithms()">Compare Algorithms</button>
+        <div id="comparison-results" class="comparison-grid"></div>
+    </div>
+
+    <!-- Performance Testing -->
+    <div class="section">
+        <h3>Performance Testing</h3>
+        <div class="form-group">
+            <label for="test-iterations">Test Iterations:</label>
+            <input type="number" id="test-iterations" value="10" min="1" max="100">
+        </div>
+        <button onclick="runPerformanceTest()">Run Performance Test</button>
+        <div id="performance-results" class="result"></div>
+    </div>
+
+    <!-- Statistics -->
+    <div class="section">
+        <h3>Compression Statistics</h3>
+        <button onclick="showStats()">Show Statistics</button>
+        <button onclick="resetStats()" class="button-secondary">Reset Statistics</button>
+        <div id="statistics" class="result"></div>
+    </div>
+
+    <script src="../dist/index.umd.js"></script>
+    <script>
+        let compressionManager;
+        let lastCompressionResult = null;
+
+        // Initialize compression manager
+        function initCompressionManager() {
+            compressionManager = new NetworkCompressionUtils.CompressionManager();
+            console.log('Compression Manager initialized');
+        }
+
+        // Load sample data based on type
+        function loadSampleData() {
+            const dataType = document.getElementById('data-type').value;
+            let sampleData = '';
+
+            switch (dataType) {
+                case 'string':
+                    sampleData = 'This is a sample string that demonstrates text compression. '.repeat(50);
+                    break;
+                case 'json':
+                    sampleData = JSON.stringify({
+                        user: {
+                            id: 12345,
+                            name: 'John Doe',
+                            email: 'john.doe@example.com',
+                            preferences: {
+                                theme: 'dark',
+                                language: 'en',
+                                notifications: true,
+                                privacy: {
+                                    showEmail: false,
+                                    showLocation: true,
+                                    dataSharing: false
+                                }
+                            },
+                            history: new Array(20).fill().map((_, i) => ({
+                                action: `action_${i}`,
+                                timestamp: Date.now() - i * 1000,
+                                details: `User performed action number ${i}`
+                            }))
+                        }
+                    }, null, 2);
+                    break;
+                case 'array':
+                    sampleData = JSON.stringify(new Array(100).fill().map((_, i) => ({
+                        id: i,
+                        name: `Product ${i}`,
+                        price: Math.floor(Math.random() * 1000) + 1,
+                        description: `This is product number ${i} with a detailed description that contains enough text to demonstrate compression capabilities.`,
+                        category: ['Electronics', 'Books', 'Clothing', 'Home', 'Sports'][i % 5],
+                        inStock: i % 3 !== 0,
+                        tags: [`tag${i}`, `category${i % 5}`, `item${i % 10}`]
+                    })), null, 2);
+                    break;
+                case 'sample':
+                    sampleData = createSampleDataset();
+                    break;
+                case 'large':
+                    sampleData = createLargeDataset();
+                    break;
+            }
+
+            document.getElementById('input-data').value = sampleData;
+        }
+
+        function createSampleDataset() {
+            return JSON.stringify({
+                metadata: {
+                    version: '1.0.0',
+                    created: new Date().toISOString(),
+                    type: 'sample_dataset'
+                },
+                users: new Array(50).fill().map((_, i) => ({
+                    id: i + 1,
+                    firstName: `FirstName${i}`,
+                    lastName: `LastName${i}`,
+                    email: `user${i + 1}@example.com`,
+                    age: 20 + (i % 50),
+                    address: {
+                        street: `${123 + i} Main St`,
+                        city: ['New York', 'Los Angeles', 'Chicago', 'Houston', 'Phoenix'][i % 5],
+                        state: 'NY',
+                        zipCode: String(10000 + i * 100)
+                    },
+                    interests: ['Technology', 'Sports', 'Music', 'Reading', 'Travel'].slice(0, Math.floor(Math.random() * 4) + 1)
+                })),
+                products: new Array(30).fill().map((_, i) => ({
+                    sku: `SKU-${String(i + 1).padStart(6, '0')}`,
+                    name: `Product ${i + 1}`,
+                    price: (Math.random() * 100 + 10).toFixed(2),
+                    category: ['Electronics', 'Clothing', 'Books', 'Home', 'Sports'][i % 5]
+                }))
+            }, null, 2);
+        }
+
+        function createLargeDataset() {
+            const largeData = {
+                timestamp: Date.now(),
+                records: []
+            };
+
+            // Generate 1000 records
+            for (let i = 0; i < 1000; i++) {
+                largeData.records.push({
+                    id: i,
+                    title: `Record ${i}: ${'Lorem ipsum dolor sit amet, consectetur adipiscing elit. '.repeat(5)}`,
+                    content: `This is the content for record ${i}. `.repeat(10),
+                    metadata: {
+                        created: new Date(Date.now() - i * 1000).toISOString(),
+                        author: `Author${i % 10}`,
+                        category: ['Tech', 'Science', 'Art', 'History', 'Nature'][i % 5],
+                        tags: Array.from({length: 5}, (_, j) => `tag${i}_${j}`),
+                        metrics: {
+                            views: Math.floor(Math.random() * 10000),
+                            likes: Math.floor(Math.random() * 1000),
+                            shares: Math.floor(Math.random() * 100)
+                        }
+                    }
+                });
+            }
+
+            return JSON.stringify(largeData, null, 2);
+        }
+
+        // Parse input data based on type
+        function parseInputData(dataType, dataString) {
+            switch (dataType) {
+                case 'string':
+                    return dataString;
+                case 'json':
+                case 'array':
+                case 'sample':
+                case 'large':
+                    try {
+                        return JSON.parse(dataString);
+                    } catch (error) {
+                        throw new Error('Invalid JSON data');
+                    }
+                default:
+                    return dataString;
+            }
+        }
+
+        // Compress data
+        function compressData() {
+            if (!compressionManager) {
+                alert('Compression manager not initialized');
+                return;
+            }
+
+            const dataType = document.getElementById('data-type').value;
+            const inputData = document.getElementById('input-data').value;
+            const algorithm = document.getElementById('algorithm').value;
+
+            if (!inputData.trim()) {
+                alert('Please enter some data to compress');
+                return;
+            }
+
+            try {
+                // Update configuration
+                compressionManager.updateConfig({
+                    algorithm: algorithm,
+                    preferSmallest: document.getElementById('prefer-smallest').checked,
+                    enableFallback: document.getElementById('enable-fallback').checked
+                });
+
+                // Parse input data
+                const data = parseInputData(dataType, inputData);
+
+                // Perform compression
+                const result = compressionManager.compress(data);
+                lastCompressionResult = result;
+
+                // Update results display
+                displayCompressionResult(result);
+
+                // Enable decompress button
+                document.querySelector('button[onclick="decompressData()"]').disabled = false;
+
+            } catch (error) {
+                document.getElementById('compression-result').textContent = `Error: ${error.message}`;
+                console.error('Compression error:', error);
+            }
+        }
+
+        // Decompress data
+        function decompressData() {
+            if (!lastCompressionResult || !compressionManager) {
+                alert('No compressed data to decompress');
+                return;
+            }
+
+            try {
+                const decompressed = compressionManager.decompress(
+                    lastCompressionResult.data,
+                    lastCompressionResult.algorithm
+                );
+
+                const result = {
+                    original: decompressed,
+                    algorithm: lastCompressionResult.algorithm,
+                    success: true
+                };
+
+                document.getElementById('compression-result').textContent = JSON.stringify(result, null, 2);
+
+            } catch (error) {
+                document.getElementById('compression-result').textContent = `Decompression error: ${error.message}`;
+                console.error('Decompression error:', error);
+            }
+        }
+
+        // Display compression results
+        function displayCompressionResult(result) {
+            // Display detailed result
+            document.getElementById('compression-result').textContent = JSON.stringify(result, null, 2);
+
+            // Update stats
+            document.getElementById('stat-original-size').textContent = formatBytes(result.originalSize);
+            document.getElementById('stat-compressed-size').textContent = formatBytes(result.compressedSize);
+            document.getElementById('stat-compression-ratio').textContent = `${(result.compressionRatio * 100).toFixed(1)}%`;
+            document.getElementById('stat-time').textContent = `${result.compressionTime.toFixed(2)}ms`;
+            document.getElementById('stat-algorithm').textContent = result.algorithm;
+
+            const statusElement = document.getElementById('stat-status');
+            statusElement.textContent = result.success ? 'Success' : 'No Compression';
+            statusElement.className = result.success ? 'stat-value success' : 'stat-value warning';
+
+            // Show stats section
+            document.getElementById('compression-stats').style.display = 'grid';
+
+            // Update progress bar
+            const progressPercentage = Math.max(0, Math.min(100, result.compressionRatio * 100));
+            document.getElementById('compression-progress').style.width = `${progressPercentage}%`;
+        }
+
+        // Compare algorithms
+        function compareAlgorithms() {
+            const inputData = document.getElementById('input-data').value;
+            if (!inputData.trim()) {
+                alert('Please enter some data to compare algorithms');
+                return;
+            }
+
+            try {
+                const dataType = document.getElementById('data-type').value;
+                const data = parseInputData(dataType, inputData);
+                const comparison = compressionManager.compareAlgorithms(data);
+
+                displayComparisonResults(comparison);
+
+            } catch (error) {
+                alert(`Comparison error: ${error.message}`);
+            }
+        }
+
+        // Display comparison results
+        function displayComparisonResults(comparison) {
+            const container = document.getElementById('comparison-results');
+            container.innerHTML = '';
+
+            Object.entries(comparison).forEach(([algorithm, results]) => {
+                const div = document.createElement('div');
+                div.className = 'algorithm-result';
+
+                if (results.error) {
+                    div.innerHTML = `
+                        <h4>${algorithm.toUpperCase()}</h4>
+                        <p class="error">Error: ${results.error}</p>
+                    `;
+                } else {
+                    div.innerHTML = `
+                        <h4>${algorithm.toUpperCase()}</h4>
+                        <p><strong>Success Rate:</strong> ${(results.successRate * 100).toFixed(1)}%</p>
+                        <p><strong>Average Compression:</strong> ${(results.averageCompressionRatio * 100).toFixed(1)}%</p>
+                        <p><strong>Average Time:</strong> ${results.averageCompressionTime.toFixed(2)}ms</p>
+                        <p><strong>Iterations:</strong> ${results.iterations}</p>
+                    `;
+                }
+
+                container.appendChild(div);
+            });
+        }
+
+        // Run performance test
+        function runPerformanceTest() {
+            const inputData = document.getElementById('input-data').value;
+            const iterations = parseInt(document.getElementById('test-iterations').value);
+
+            if (!inputData.trim()) {
+                alert('Please enter some data for performance testing');
+                return;
+            }
+
+            try {
+                const dataType = document.getElementById('data-type').value;
+                const data = parseInputData(dataType, inputData);
+                const testResults = compressionManager.testCompression(data, iterations);
+
+                displayPerformanceResults(testResults);
+
+            } catch (error) {
+                alert(`Performance test error: ${error.message}`);
+            }
+        }
+
+        // Display performance results
+        function displayPerformanceResults(results) {
+            const output = `Performance Test Results (${results.iterations} iterations)
+
+Algorithm: ${results.algorithm.toUpperCase()}
+Average Compression Ratio: ${(results.averageCompressionRatio * 100).toFixed(2)}%
+Average Compression Time: ${results.averageCompressionTime.toFixed(2)}ms
+Success Rate: ${(results.successRate * 100).toFixed(1)}%
+
+Individual Results:
+${results.results.map((r, i) => `${i + 1}. ${r.success ? 'SUCCESS' : 'NO COMPRESSION'} - ${r.compressionRatio > 0 ? (r.compressionRatio * 100).toFixed(1) + '%' : '0%'} in ${r.compressionTime.toFixed(2)}ms`).join('\n')}`;
+
+            document.getElementById('performance-results').textContent = output;
+        }
+
+        // Show statistics
+        function showStats() {
+            const stats = compressionManager.getCompressionStats();
+
+            const output = `Compression Statistics
+
+Total Compressions: ${stats.totalCompressions}
+Successful Compressions: ${stats.successfulCompressions}
+Success Rate: ${(stats.successRate * 100).toFixed(1)}%
+Total Original Size: ${formatBytes(stats.totalOriginalSize)}
+Total Compressed Size: ${formatBytes(stats.totalCompressedSize)}
+Overall Compression Ratio: ${(stats.overallCompressionRatio * 100).toFixed(1)}%
+Space Saved: ${formatBytes(stats.spaceSaved)}
+Average Compression Time: ${stats.averageCompressionTime.toFixed(2)}ms`;
+
+            document.getElementById('statistics').textContent = output;
+        }
+
+        // Reset statistics
+        function resetStats() {
+            compressionManager.resetStats();
+            document.getElementById('statistics').textContent = 'Statistics reset successfully.';
+        }
+
+        // Clear data
+        function clearData() {
+            document.getElementById('input-data').value = '';
+            document.getElementById('compression-result').textContent = 'Results will appear here...';
+            document.getElementById('compression-stats').style.display = 'none';
+            document.getElementById('compression-progress').style.width = '0%';
+            document.querySelector('button[onclick="decompressData()"]').disabled = true;
+            lastCompressionResult = null;
+        }
+
+        // Format bytes to human readable format
+        function formatBytes(bytes) {
+            if (bytes === 0) return '0 Bytes';
+
+            const k = 1024;
+            const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+            const i = Math.floor(Math.log(bytes) / Math.log(k));
+
+            return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+        }
+
+        // Handle data type change
+        document.getElementById('data-type').addEventListener('change', function() {
+            if (this.value !== 'string' && !document.getElementById('input-data').value) {
+                loadSampleData();
+            }
+        });
+
+        // Initialize on page load
+        window.onload = () => {
+            console.log('Compression Demo loaded');
+            initCompressionManager();
+        };
+    </script>
+</body>
+</html>
