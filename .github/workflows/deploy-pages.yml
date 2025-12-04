@@ -4,6 +4,9 @@ on:
   # 推送到 main 分支时触发
   push:
     branches: [ main ]
+    paths:
+      - 'examples/**'
+      - '.github/workflows/deploy-pages.yml'
   # 允许手动触发
   workflow_dispatch:
 
@@ -27,6 +30,12 @@ jobs:
         uses: actions/checkout@v4
       - name: Setup Pages
         uses: actions/configure-pages@v4
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18.x'
+      - name: Install dependencies
+        run: npm install --no-save
       - name: Upload artifact
         # 上传 examples 目录作为 GitHub Pages 站点
         uses: actions/upload-pages-artifact@v3
