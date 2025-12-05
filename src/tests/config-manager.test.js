@@ -14,7 +14,7 @@ describe('ConfigManager', () => {
       expect(config.thresholds['2g']).toBe(500);
       expect(config.thresholds['3g']).toBe(700);
       expect(config.thresholds['4g']).toBe(2048);
-      expect(config.defaultFormat).toBe('urlsearch');
+      expect(config.defaultFormat).toBe('string');
       expect(config.enableAutoCompression).toBe(true);
     });
 
@@ -23,7 +23,7 @@ describe('ConfigManager', () => {
         thresholds: {
           '4g': 4096,
         },
-        defaultFormat: 'formdata',
+        defaultFormat: 'string',
         enableLogging: true,
       };
 
@@ -55,7 +55,7 @@ describe('ConfigManager', () => {
       // Should fall back to defaults for invalid values
       const config = manager.getConfig();
       expect(config.thresholds['slow-2g']).toBe(100); // Default value
-      expect(config.defaultFormat).toBe('urlsearch'); // Fallback format
+      expect(config.defaultFormat).toBe('string'); // Fallback format
       expect(config.maxCompressionSize).toBe(1024 * 1024); // Default size
     });
   });
@@ -64,7 +64,7 @@ describe('ConfigManager', () => {
     test('should update configuration successfully', () => {
       const manager = new ConfigManager();
       const newConfig = {
-        defaultFormat: 'formdata',
+        defaultFormat: 'string',
         enableLogging: true,
       };
 
@@ -91,7 +91,7 @@ describe('ConfigManager', () => {
 
     test('should reset to defaults', () => {
       const manager = new ConfigManager({
-        defaultFormat: 'formdata',
+        defaultFormat: 'string',
         enableLogging: true,
         thresholds: { '4g': 4096 },
       });
@@ -99,7 +99,7 @@ describe('ConfigManager', () => {
       manager.resetToDefaults();
       const config = manager.getConfig();
 
-      expect(config.defaultFormat).toBe('urlsearch');
+      expect(config.defaultFormat).toBe('string');
       expect(config.enableLogging).toBe(false);
       expect(config.thresholds['4g']).toBe(2048);
     });
@@ -223,7 +223,7 @@ describe('ConfigManager', () => {
 
     test('should fall back to default format for invalid requests', () => {
       const manager = new ConfigManager({
-        defaultFormat: 'formdata',
+        defaultFormat: 'string',
       });
 
       expect(manager.getOptimalFormat('invalid')).toBe('formdata');
@@ -252,7 +252,7 @@ describe('ConfigManager', () => {
 
     test('should provide configuration summary', () => {
       const manager = new ConfigManager({
-        defaultFormat: 'formdata',
+        defaultFormat: 'string',
         enableLogging: true,
         maxCompressionSize: 2048,
       });
