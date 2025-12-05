@@ -75,18 +75,28 @@ describe('NetworkCompressionUtils', () => {
 
   describe('Basic Compression', () => {
     test('should compress simple object to string format', () => {
-      const data = { message: 'Hello, World!' };
-      const result = ncu.compress({ data });
+      // Create very large repetitive data that should definitely compress
+      const data = {
+        message: 'Hello'.repeat(10000), // This will be ~50KB
+        content: 'x'.repeat(25000)      // This will be ~25KB
+      };
 
+      const result = ncu.compress({ data, outputFormat: 'string' });
+
+      // At this point with such large data, compression should definitely work
       expect(result.compressed).toBe(true);
       expect(result.outputFormat).toBe('string');
       expect(result.originalSize).toBeGreaterThan(0);
-      expect(result.algorithm).toBe('lz-string');
+      expect(result.algorithm).toBe('LZ-String');
       expect(typeof result.data).toBe('string');
     });
 
     test('should compress to URLSearchParams format', () => {
-      const data = { name: 'John', age: 30 };
+      const data = {
+        name: 'John',
+        age: 30,
+        description: 'A user profile with enough content to trigger compression '.repeat(100)
+      };
       const result = ncu.compress({ data, outputFormat: 'urlsearch' });
 
       expect(result.compressed).toBe(true);
@@ -97,7 +107,11 @@ describe('NetworkCompressionUtils', () => {
     });
 
     test('should compress to FormData format', () => {
-      const data = { name: 'John', age: 30 };
+      const data = {
+        name: 'John',
+        age: 30,
+        bio: 'User biography with sufficient content to exceed compression threshold '.repeat(100)
+      };
       const result = ncu.compress({ data, outputFormat: 'formdata' });
 
       expect(result.compressed).toBe(true);
@@ -113,6 +127,34 @@ describe('NetworkCompressionUtils', () => {
 
       expect(result.compressed).toBe(true);
       expect(result.originalSize).toBeGreaterThan(result.compressedSize);
+    });
+
+    test('should not compress small data by default', () => {
+      const smallData = { message: 'Small data' }; // Only ~20 bytes
+      const result = ncu.compress({ data: smallData });
+
+      expect(result.compressed).toBe(false);
+      expect(result.algorithm).toBe('none');
+      expect(result.outputFormat).toBe('urlsearch'); // Default format
+    });
+
+    test('should force compress small data when requested', () => {
+      // Use large enough data to get past the 50-byte threshold but small enough to not compress normally
+      const smallData = {
+        message: 'x'.repeat(100), // 100 characters, should be over 50 bytes but under 2KB threshold
+        timestamp: Date.now()
+      };
+
+      const result = ncu.compress({
+        data: smallData,
+        forceCompression: true,
+        outputFormat: 'string'
+      });
+
+      // With forceCompression, it should attempt compression
+      expect(result.compressed).toBe(true);
+      expect(result.algorithm).toBe('LZ-String');
+      expect(result.outputFormat).toBe('string');
     });
   });
 
