@@ -35,7 +35,7 @@ jobs:
         cache: 'npm'
 
     - name: Install dependencies
-      run: npm install
+      run: npm ci
 
     - name: Run linting
       run: npm run lint
@@ -81,7 +81,7 @@ jobs:
         cache: 'npm'
 
     - name: Install dependencies
-      run: npm install
+      run: npm ci
 
     - name: Build project
       run: npm run build
@@ -124,7 +124,7 @@ jobs:
         cache: 'npm'
 
     - name: Install dependencies
-      run: npm install
+      run: npm ci
 
     - name: Test ESM module imports
       run: node --input-type=module -e "import('./dist/index.esm.js').then(m => console.log('ESM import works:', !!m.default))"
