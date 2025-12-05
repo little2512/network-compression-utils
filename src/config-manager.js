@@ -16,7 +16,7 @@
  * Complete configuration object
  * @typedef {Object} CompressionConfig
  * @property {CompressionThresholds} thresholds - Network-based compression thresholds
- * @property {string} defaultFormat - Default output format ('urlsearch', 'formdata', 'string')
+ * @property {string} defaultFormat - Default output format ('string')
  * @property {boolean} enableAutoCompression - Enable automatic compression based on network
  * @property {number} maxCompressionSize - Maximum size to attempt compression (bytes)
  * @property {boolean} enableLogging - Enable debug logging
@@ -34,7 +34,7 @@ const DEFAULT_CONFIG = {
     '3g': 700, // Compress data larger than 700 bytes on 3g networks
     '4g': 2048, // Compress data larger than 2KB on 4g networks
   },
-  defaultFormat: 'urlsearch',
+  defaultFormat: 'string',
   enableAutoCompression: true,
   maxCompressionSize: 1024 * 1024, // 1MB max size for compression
   enableLogging: false,
@@ -45,7 +45,7 @@ const DEFAULT_CONFIG = {
 /**
  * Valid output formats
  */
-const VALID_FORMATS = ['urlsearch', 'formdata', 'string'];
+const VALID_FORMATS = ['string'];
 
 /**
  * Network types that require compression
@@ -131,7 +131,7 @@ export default class ConfigManager {
           ', '
         )}`
       );
-      this.config.defaultFormat = 'urlsearch'; // Fallback to safe default
+      this.config.defaultFormat = 'string'; // Fallback to safe default
     }
 
     // Validate max compression size

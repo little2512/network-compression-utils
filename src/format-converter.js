@@ -1,7 +1,10 @@
 /**
  * Format Converter Module
  * Handles conversion between different output formats
+ * Focused on JSON/Objects to URL parameters conversion using qs library
  */
+
+import qs from 'qs';
 
 /**
  * Format conversion result

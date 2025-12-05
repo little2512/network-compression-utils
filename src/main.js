@@ -8,6 +8,7 @@ import ConfigManager from './config-manager.js';
 import CompressionManager from './compression-manager.js';
 import FormatConverter from './format-converter.js';
 import BrowserCompatibilityManager from './browser-compatibility.js';
+import qs from 'qs';
 import {
   NetworkAdapterFactory,
   CompressionAdapterFactory,
@@ -179,35 +180,41 @@ export default class NetworkCompressionUtils {
         }
       }
 
-      // Convert to requested output format
-      const outputFormat = this.configManager.getOptimalFormat(
-        options.outputFormat,
-        finalData
-      );
+      // Convert to final output format (always string)
+      let finalOutputData;
 
-      const formatResult = this.formatConverter.convertToFormat(
-        finalData,
-        outputFormat
-      );
+      if (shouldCompress && compressionResult?.success) {
+        // If compressed, data is already a string
+        finalOutputData = finalData;
+      } else {
+        // If not compressed, convert to URL parameter string using qs
+        const processedData = typeof finalData === 'string'
+          ? JSON.parse(finalData)
+          : finalData;
 
-      if (!formatResult.success) {
-        return this.createErrorResult(
-          `Format conversion failed: ${formatResult.error}`,
-          options.outputFormat
-        );
+        try {
+          finalOutputData = qs.stringify(processedData, {
+            arrayFormat: 'brackets',
+            allowDots: true,
+            encode: true
+          });
+        } catch (error) {
+          // Fallback to JSON.stringify if qs fails
+          finalOutputData = JSON.stringify(processedData);
+        }
       }
 
       const processingTime = performance.now() - startTime;
 
       return {
         compressed: shouldCompress && compressionResult?.success,
-        data: formatResult.data,
+        data: finalOutputData, // Always a string
         originalSize,
         compressedSize:
           compressedSize !== originalSize ? compressedSize : undefined,
         compressionRatio: compressionRatio > 0 ? compressionRatio : undefined,
         networkType,
-        outputFormat: formatResult.format,
+        outputFormat: 'string', // Always string output
         algorithm,
         processingTime,
       };
