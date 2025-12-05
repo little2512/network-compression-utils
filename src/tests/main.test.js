@@ -95,7 +95,13 @@ describe('NetworkCompressionUtils', () => {
       const data = {
         name: 'John',
         age: 30,
-        description: 'A user profile with enough content to trigger compression '.repeat(100)
+        description: 'A user profile with extensive content '.repeat(300),
+        bio: 'This is a very long biography that contains a lot of repeated text to ensure the data is large enough for compression '.repeat(200),
+        tags: Array(50).fill('tag').join(','),
+        metadata: {
+          details: 'x'.repeat(1000),
+          info: 'repeated data '.repeat(100)
+        }
       };
       const result = ncu.compress({ data, outputFormat: 'urlsearch' });
 
@@ -110,7 +116,13 @@ describe('NetworkCompressionUtils', () => {
       const data = {
         name: 'John',
         age: 30,
-        bio: 'User biography with sufficient content to exceed compression threshold '.repeat(100)
+        bio: 'User biography with extensive content '.repeat(400),
+        profile: {
+          summary: 'Very long profile summary '.repeat(200),
+          history: 'Historical data '.repeat(300),
+          preferences: Array(100).fill('preference').join(',')
+        },
+        activities: Array(50).fill('activity').map((a, i) => `${a}_${i}`).join(',')
       };
       const result = ncu.compress({ data, outputFormat: 'formdata' });
 
@@ -122,7 +134,7 @@ describe('NetworkCompressionUtils', () => {
     });
 
     test('should handle string data', () => {
-      const data = 'This is a test string for compression '.repeat(10);
+      const data = 'This is a test string for compression '.repeat(1000);
       const result = ncu.compress({ data });
 
       expect(result.compressed).toBe(true);
@@ -198,8 +210,14 @@ describe('NetworkCompressionUtils', () => {
               theme: 'dark',
               notifications: ['email', 'sms'],
             },
+            bio: 'Very long user biography '.repeat(200),
+            interests: Array(50).fill('interest').join(',')
           },
         },
+        metadata: {
+          details: 'x'.repeat(2000),
+          tags: Array(100).fill('tag')
+        }
       };
 
       const result = ncu.compress({ data, outputFormat: 'urlsearch' });
@@ -212,8 +230,10 @@ describe('NetworkCompressionUtils', () => {
 
     test('should handle arrays in FormData', () => {
       const data = {
-        tags: ['javascript', 'react', 'nodejs'],
-        scores: [95, 87, 92],
+        tags: Array(100).fill('javascript'),
+        scores: Array(50).fill(95),
+        content: 'Large content '.repeat(1000),
+        description: 'Very long description '.repeat(500)
       };
 
       const result = ncu.compress({ data, outputFormat: 'formdata' });
@@ -225,7 +245,12 @@ describe('NetworkCompressionUtils', () => {
 
     test('should handle File objects in FormData', () => {
       const file = new File(['content'], 'test.txt', { type: 'text/plain' });
-      const data = { document: file, name: 'John' };
+      const data = {
+        document: file,
+        name: 'John',
+        bio: 'Extended biography '.repeat(1000),
+        description: 'Very long description '.repeat(800)
+      };
 
       const result = ncu.compress({ data, outputFormat: 'formdata' });
 
