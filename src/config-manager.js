@@ -29,10 +29,10 @@
  */
 const DEFAULT_CONFIG = {
   thresholds: {
-    'slow-2g': 100, // Compress data larger than 100 bytes on very slow networks
-    '2g': 500, // Compress data larger than 500 bytes on 2g networks
-    '3g': 700, // Compress data larger than 700 bytes on 3g networks
-    '4g': 2048, // Compress data larger than 2KB on 4g networks
+    'slow-2g': 50, // Reduced from 100 - more aggressive for real weak networks
+    '2g': 300, // Reduced from 500 - proactive compression
+    '3g': 600, // Reduced from 700 - more responsive
+    '4g': 1800, // Reduced from 2048 - slight adjustment
   },
   defaultFormat: 'string',
   enableAutoCompression: true,
@@ -40,6 +40,15 @@ const DEFAULT_CONFIG = {
   enableLogging: false,
   compressionTimeout: 5000, // 5 second timeout
   preferSmallest: true, // Always prefer the smaller of compressed/original
+
+  // Performance-based compression settings
+  performanceOptimization: {
+    enabled: true, // Enable performance-based compression
+    performanceThreshold: 1, // 1ms performance threshold
+    speedTestInterval: 30000, // Test actual speed every 30 seconds
+    minSpeedTestSamples: 3, // Minimum samples for speed estimation
+    aggressiveModeThreshold: 5, // Enable aggressive mode if speed < 5 Kbps
+  },
 };
 
 /**

@@ -1,8 +1,8 @@
 {
   "name": "network-compression-utils",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "type": "module",
-  "description": "A JavaScript library for network-aware data compression",
+  "description": "A JavaScript library for intelligent network-aware data compression with real-time performance analysis",
   "main": "dist/index.js",
   "module": "dist/index.esm.js",
   "browser": "dist/index.umd.js",
@@ -46,7 +46,12 @@
     "lz-string",
     "network-aware",
     "adaptive",
-    "optimization"
+    "optimization",
+    "performance-analysis",
+    "weak-network",
+    "real-time",
+    "transmission-optimization",
+    "intelligent-compression"
   ],
   "author": "little2512",
   "license": "MIT",

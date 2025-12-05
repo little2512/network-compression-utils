@@ -8,6 +8,8 @@ import ConfigManager from './config-manager.js';
 import CompressionManager from './compression-manager.js';
 import FormatConverter from './format-converter.js';
 import BrowserCompatibilityManager from './browser-compatibility.js';
+import PerformanceAnalyzer from './performance-analyzer.js';
+import NetworkSpeedTester from './network-speed-tester.js';
 import qs from 'qs';
 import {
   NetworkAdapterFactory,
@@ -70,7 +72,15 @@ export default class NetworkCompressionUtils {
     this.compressionManager = this.createCompressionManager();
     this.formatConverter = this.createFormatConverter();
 
+    // Initialize performance analysis components
+    this.performanceAnalyzer = new PerformanceAnalyzer(config);
+    this.networkSpeedTester = new NetworkSpeedTester({
+      testUrl: config.speedTestUrl || '/api/network-speed-test',
+      testSize: config.speedTestSize || 1024
+    });
+
     this.setupNetworkListener();
+    this.setupPerformanceTesting();
   }
 
   /**
@@ -114,13 +124,73 @@ export default class NetworkCompressionUtils {
   }
 
   /**
-   * Handle network changes
-   * @param {Object} networkInfo - New network information
+   * Setup periodic performance testing
    */
+  setupPerformanceTesting() {
+    const config = this.configManager.config.performanceOptimization;
+    if (!config?.enabled) {
+      return;
+    }
+
+    const interval = config.speedTestInterval || 30000; // 30 seconds default
+
+    // Perform initial speed test
+    this.performSpeedTest().catch(error => {
+      if (this.configManager.config.enableLogging) {
+        console.warn('Initial speed test failed:', error.message);
+      }
+    });
+
+    // Set up periodic testing
+    setInterval(() => {
+      this.performSpeedTest().catch(error => {
+        // Silently fail periodic tests to avoid console spam
+        if (this.configManager.config.enableLogging) {
+          console.warn('Periodic speed test failed:', error.message);
+        }
+      });
+    }, interval);
+  }
+
+  /**
+   * Perform network speed test
+   * @param {Object} options - Speed test options
+   * @returns {Promise<Object>} Speed test results
+   */
+  async performSpeedTest(options = {}) {
+    try {
+      const result = await this.networkSpeedTester.performSpeedTest(options);
+
+      if (this.configManager.config.enableLogging) {
+        console.log('Speed test completed:', {
+          speedKbps: result.speedKbps.toFixed(2),
+          latency: result.latency.toFixed(2) + 'ms',
+          quality: result.quality
+        });
+      }
+
+      return result;
+    } catch (error) {
+      if (this.configManager.config.enableLogging) {
+        console.warn('Speed test failed:', error.message);
+      }
+      throw error;
+    }
+  }
+
   onNetworkChange(networkInfo) {
     // Log network change if logging is enabled
     if (this.configManager.getConfig().enableLogging) {
       console.log('Network changed:', networkInfo.effectiveType);
+    }
+
+    // Trigger speed test on network change
+    if (this.configManager.config.performanceOptimization?.enabled) {
+      setTimeout(() => {
+        this.performSpeedTest().catch(() => {
+          // Silently fail to avoid console spam during network changes
+        });
+      }, 1000); // Wait 1 second for network to stabilize
     }
   }
 
@@ -246,7 +316,24 @@ export default class NetworkCompressionUtils {
     // Get data size
     const dataSize = this.getDataSize(data);
 
-    // Check configuration-based compression decision
+    // Use performance-based compression decision if available
+    const config = this.configManager.config.performanceOptimization;
+    if (config?.enabled && this.performanceAnalyzer) {
+      const performanceResult = this.performanceAnalyzer.analyzeCompressionDecision(
+        dataSize,
+        networkType,
+        { forceCompression }
+      );
+
+      // Log performance-based decision if logging is enabled
+      if (this.configManager.getConfig().enableLogging && performanceResult.recommendation) {
+        console.log('Performance-based compression decision:', performanceResult.recommendation);
+      }
+
+      return performanceResult.shouldCompress;
+    }
+
+    // Fallback to traditional threshold-based decision
     return this.configManager.shouldCompressData(dataSize, networkType);
   }
 
@@ -508,6 +595,90 @@ export default class NetworkCompressionUtils {
    */
   getCompatibilityWarnings() {
     return this.compatibilityManager.getCompatibilityWarnings();
+  }
+
+  /**
+   * Get performance analysis for a specific data size
+   * @param {number} dataSize - Data size in bytes
+   * @param {string} networkType - Network type (optional, will use detected if not provided)
+   * @returns {Object} - Performance analysis result
+   */
+  getPerformanceAnalysis(dataSize, networkType = null) {
+    const actualNetworkType = networkType || this.networkDetector.getNetworkInfo()?.effectiveType || '4g';
+
+    if (this.performanceAnalyzer) {
+      return this.performanceAnalyzer.analyzeCompressionDecision(dataSize, actualNetworkType);
+    }
+
+    // Fallback analysis without performance data
+    const threshold = this.configManager.getThresholdForNetwork(actualNetworkType);
+    const estimatedSpeed = this.performanceAnalyzer?.networkSpeedEstimates[actualNetworkType] || 10000;
+    const estimatedTime = this.performanceAnalyzer?.calculateTransmissionTime?.(dataSize, estimatedSpeed) || (dataSize * 8) / (estimatedSpeed * 1000);
+
+    return {
+      shouldCompress: dataSize > threshold,
+      estimatedTransmissionTime: estimatedTime,
+      compressionBenefit: Math.max(0, estimatedTime - (estimatedTime * 0.5)), // Assume 50% compression
+      recommendation: dataSize > threshold
+        ? `Data size (${dataSize} bytes) exceeds ${actualNetworkType} threshold (${threshold} bytes). Compression recommended.`
+        : `Data size (${dataSize} bytes) within ${actualNetworkType} threshold (${threshold} bytes). No compression needed.`,
+      metrics: {
+        dataSize,
+        threshold,
+        networkType: actualNetworkType,
+        usePerformanceOptimization: false
+      }
+    };
+  }
+
+  /**
+   * Get network performance status
+   * @returns {Object} - Current network performance status
+   */
+  getNetworkPerformanceStatus() {
+    if (!this.performanceAnalyzer) {
+      return {
+        hasPerformanceData: false,
+        message: 'Performance analyzer not available'
+      };
+    }
+
+    const performanceStatus = this.performanceAnalyzer.getPerformanceStatus();
+    const speedTestSummary = this.networkSpeedTester?.getPerformanceSummary();
+
+    return {
+      hasPerformanceData: performanceStatus.hasRealData,
+      averageSpeedKbps: performanceStatus.averageSpeedKbps,
+      sampleCount: performanceStatus.sampleCount,
+      weakNetworkCondition: performanceStatus.weakNetworkCondition,
+      lastSpeedTest: performanceStatus.lastSpeedTest,
+      performanceThreshold: performanceStatus.performanceThreshold,
+      speedTestSummary,
+      networkInfo: this.networkDetector.getNetworkInfo()
+    };
+  }
+
+  /**
+   * Force update network speed measurement
+   * @param {Object} options - Speed test options
+   * @returns {Promise<Object>} - Speed test results
+   */
+  async updateNetworkSpeed(options = {}) {
+    try {
+      const result = await this.performSpeedTest(options);
+
+      return {
+        success: true,
+        speedTestResult: result,
+        performanceStatus: this.getNetworkPerformanceStatus()
+      };
+    } catch (error) {
+      return {
+        success: false,
+        error: error.message,
+        performanceStatus: this.getNetworkPerformanceStatus()
+      };
+    }
   }
 
   /**

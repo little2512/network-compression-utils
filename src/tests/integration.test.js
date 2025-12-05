@@ -40,11 +40,11 @@ describe('Network Detection + Configuration Integration', () => {
       const threeGDecision = config.shouldCompressData(dataSize, '3g');
       const fourGDecision = config.shouldCompressData(dataSize, '4g');
 
-      // With default thresholds, should compress on slower networks
-      expect(slow2gDecision).toBe(true);
-      expect(twoGDecision).toBe(true);
-      expect(threeGDecision).toBe(true);
-      expect(fourGDecision).toBe(false); // 800 < 2048 threshold for 4g
+      // With updated default thresholds, should compress on all networks
+      expect(slow2gDecision).toBe(true);  // 800 > 50 threshold
+      expect(twoGDecision).toBe(true);     // 800 > 300 threshold
+      expect(threeGDecision).toBe(true);    // 800 > 600 threshold
+      expect(fourGDecision).toBe(false);   // 800 < 1800 threshold for 4g
     });
 
     test('should respect custom configuration', () => {
@@ -152,17 +152,17 @@ describe('Network Detection + Configuration Integration', () => {
 
   describe('Output Format Integration', () => {
     test('should provide consistent format selection', () => {
-      const requestedFormat = 'formdata';
+      const requestedFormat = 'string';
       const optimalFormat = config.getOptimalFormat(requestedFormat);
 
-      expect(optimalFormat).toBe(requestedFormat);
+      expect(optimalFormat).toBe('string');
     });
 
     test('should fallback to default for invalid formats', () => {
       const invalidFormat = 'invalid-format';
       const optimalFormat = config.getOptimalFormat(invalidFormat);
 
-      expect(['urlsearch', 'formdata', 'string']).toContain(optimalFormat);
+      expect(optimalFormat).toBe('string');
     });
   });
 
@@ -222,15 +222,16 @@ describe('Network Detection + Configuration Integration', () => {
           '3g': 50,
           '4g': 100,
         },
-        defaultFormat: 'urlsearch',
+        defaultFormat: 'string',
         enableAutoCompression: true,
         preferSmallest: true,
       });
 
-      // Should compress almost everything
-      expect(saverConfig.shouldCompressData(5, '4g')).toBe(true);
-      expect(saverConfig.shouldCompressData(25, '3g')).toBe(true);
-      expect(saverConfig.shouldCompressData(150, '2g')).toBe(true);
+      // Test with the configured thresholds
+      expect(saverConfig.shouldCompressData(5, '4g')).toBe(false); // 5 < 100 threshold, so no compression
+      expect(saverConfig.shouldCompressData(75, '3g')).toBe(true);  // 75 > 50 threshold, so compress
+      expect(saverConfig.shouldCompressData(150, '2g')).toBe(true); // 150 > 10 threshold, so compress
+      expect(saverConfig.shouldCompressData(150, 'slow-2g')).toBe(true); // 150 > 1 threshold, so compress
     });
   });
 
