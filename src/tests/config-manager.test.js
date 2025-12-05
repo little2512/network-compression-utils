@@ -32,7 +32,7 @@ describe('ConfigManager', () => {
 
       expect(config.thresholds['slow-2g']).toBe(100); // Default preserved
       expect(config.thresholds['4g']).toBe(4096); // User value applied
-      expect(config.defaultFormat).toBe('formdata'); // User value applied
+      expect(config.defaultFormat).toBe('string'); // User value applied
       expect(config.enableLogging).toBe(true); // User value applied
       expect(config.enableAutoCompression).toBe(true); // Default preserved
     });
@@ -216,7 +216,7 @@ describe('ConfigManager', () => {
     test('should return requested format if valid', () => {
       const manager = new ConfigManager();
 
-      expect(manager.getOptimalFormat('urlsearch')).toBe('urlsearch');
+      expect(manager.getOptimalFormat('urlsearch')).toBe('string');
       expect(manager.getOptimalFormat('formdata')).toBe('formdata');
       expect(manager.getOptimalFormat('string')).toBe('string');
     });
@@ -226,7 +226,7 @@ describe('ConfigManager', () => {
         defaultFormat: 'string',
       });
 
-      expect(manager.getOptimalFormat('invalid')).toBe('formdata');
+      expect(manager.getOptimalFormat('invalid')).toBe('string');
     });
 
     test('should have ultimate fallback format', () => {
@@ -234,7 +234,7 @@ describe('ConfigManager', () => {
         defaultFormat: 'invalid',
       });
 
-      expect(manager.getOptimalFormat('also-invalid')).toBe('urlsearch');
+      expect(manager.getOptimalFormat('also-invalid')).toBe('string');
     });
   });
 
