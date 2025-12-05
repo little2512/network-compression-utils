@@ -103,7 +103,14 @@ export default class FormatConverter {
       if (value !== null && value !== undefined) {
         const stringValue = String(value);
         if (encode) {
-          params.append(key, encodeURIComponent(stringValue));
+          // Use custom encoding that converts spaces to + for URLSearchParams compatibility
+          const encoded = stringValue
+            .replace(/%/g, '%25')
+            .replace(/\+/g, '%2B')
+            .replace(/\n/g, '%0A')
+            .replace(/\r/g, '%0D')
+            .replace(/ /g, '+');
+          params.append(key, encoded);
         } else {
           params.append(key, stringValue);
         }
@@ -168,7 +175,12 @@ export default class FormatConverter {
 
     let stringData;
 
-    if (typeof data === 'string') {
+    // Handle null and undefined explicitly
+    if (data === null) {
+      stringData = 'null';
+    } else if (data === undefined) {
+      stringData = '';
+    } else if (typeof data === 'string') {
       stringData = data;
     } else if (data instanceof URLSearchParams) {
       stringData = data.toString();

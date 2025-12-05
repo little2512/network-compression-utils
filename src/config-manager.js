@@ -69,6 +69,11 @@ export default class ConfigManager {
    * @returns {CompressionConfig} - Merged configuration
    */
   mergeWithDefaults(userConfig) {
+    // Handle null/undefined config
+    if (!userConfig || typeof userConfig !== 'object') {
+      return JSON.parse(JSON.stringify(DEFAULT_CONFIG)); // Deep clone defaults only
+    }
+
     const merged = JSON.parse(JSON.stringify(DEFAULT_CONFIG)); // Deep clone
 
     // Merge thresholds if provided
@@ -112,6 +117,10 @@ export default class ConfigManager {
         this.validationErrors.push(
           `Invalid threshold for ${networkType}: must be positive number`
         );
+        // Fix invalid threshold by using default
+        if (DEFAULT_CONFIG.thresholds[networkType]) {
+          thresholds[networkType] = DEFAULT_CONFIG.thresholds[networkType];
+        }
       }
     });
 
@@ -159,7 +168,8 @@ export default class ConfigManager {
    * @returns {CompressionConfig} - Current configuration
    */
   getConfig() {
-    return { ...this.config };
+    // Return deep copy to prevent external modification
+    return JSON.parse(JSON.stringify(this.config));
   }
 
   /**
