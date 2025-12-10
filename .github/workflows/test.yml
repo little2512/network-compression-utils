@@ -96,7 +96,7 @@ jobs:
         sudo apt-get install -y firefox
 
     - name: Run Karma tests on ${{ matrix.browser }}
-      run: karma start karma.conf.cjs --single-run --browsers ${{ matrix.browser }}
+      run: npx karma start karma.conf.cjs --single-run --browsers ${{ matrix.browser }}
 
     - name: Upload test results
       uses: actions/upload-artifact@v4
