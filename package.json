@@ -15,7 +15,7 @@
     "build:browser": "rollup -c rollup.browser.config.js",
     "build:simple": "rollup -c rollup.simple.config.js",
     "dev": "rollup -c -w",
-    "test": "karma start karma.conf.cjs --single-run --browsers ChromeHeadless,FirefoxHeadless",
+    "test": "karma start karma.conf.cjs --single-run --browsers ChromeHeadless",
     "test:watch": "karma start karma.conf.cjs --auto-watch",
     "test:chrome": "karma start karma.conf.cjs --single-run --browsers ChromeHeadless",
     "test:firefox": "karma start karma.conf.cjs --single-run --browsers FirefoxHeadless",
