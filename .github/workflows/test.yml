@@ -38,6 +38,9 @@ jobs:
     - name: Install dependencies
       run: npm ci
 
+    - name: Build project
+      run: npm run build
+
     - name: Run linting
       run: npm run lint
 
@@ -48,9 +51,6 @@ jobs:
       run: |
         npm run test:chrome
         npm run test:firefox
-
-    - name: Build project
-      run: npm run build
 
     - name: Test package creation
       run: npm run dry-run
