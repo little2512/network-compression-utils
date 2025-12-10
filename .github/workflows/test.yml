@@ -39,7 +39,9 @@ jobs:
       run: npm ci
 
     - name: Build project
-      run: npm run build
+      run: |
+        npm run build
+        npm run build:browser
 
     - name: Run linting
       run: npm run lint
@@ -87,7 +89,9 @@ jobs:
       run: npm ci
 
     - name: Build project
-      run: npm run build
+      run: |
+        npm run build
+        npm run build:browser
 
     - name: Install additional browser dependencies
       if: matrix.browser == 'FirefoxHeadless'
@@ -124,7 +128,9 @@ jobs:
       run: npm ci
 
     - name: Build project
-      run: npm run build
+      run: |
+        npm run build
+        npm run build:browser
 
     - name: Test ESM module imports
       run: node --input-type=module -e "import('./dist/index.esm.js').then(m => console.log('ESM import works:', !!m.default))"
@@ -168,7 +174,9 @@ jobs:
       run: npm ci
 
     - name: Build project
-      run: npm run build
+      run: |
+        npm run build
+        npm run build:browser
 
     - name: Run performance benchmark tests
       run: |
