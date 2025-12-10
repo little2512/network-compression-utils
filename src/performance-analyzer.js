@@ -34,21 +34,23 @@ class PerformanceAnalyzer {
     this.speedSamples = [];
     this.lastSpeedTest = 0;
     this.averageSpeedKbps = null;
-    this.performanceThreshold = this.configManager.config.performanceOptimization?.performanceThreshold || 1;
+    this.performanceThreshold =
+      this.configManager.config.performanceOptimization?.performanceThreshold ||
+      1;
 
     // Network type speed estimates (Kbps) - fallback values
     this.networkSpeedEstimates = {
-      '4g': 10000,    // 10 Mbps typical
-      '3g': 2000,     // 2 Mbps typical
-      '2g': 100,      // 0.1 Mbps typical
-      'slow-2g': 30,  // 30 Kbps typical
+      '4g': 10000, // 10 Mbps typical
+      '3g': 2000, // 2 Mbps typical
+      '2g': 100, // 0.1 Mbps typical
+      'slow-2g': 30, // 30 Kbps typical
     };
 
     // Real-world weak network scenarios
     this.weakNetworkProfiles = {
-      'very-slow': { min: 1, max: 2, multiplier: 0.1 },      // 1-2 Kbps
+      'very-slow': { min: 1, max: 2, multiplier: 0.1 }, // 1-2 Kbps
       'extremely-slow': { min: 0.5, max: 1, multiplier: 0.05 }, // 0.5-1 Kbps
-      'critical': { min: 0.1, max: 0.5, multiplier: 0.02 },    // 0.1-0.5 Kbps
+      critical: { min: 0.1, max: 0.5, multiplier: 0.02 }, // 0.1-0.5 Kbps
     };
   }
 
@@ -76,10 +78,20 @@ class PerformanceAnalyzer {
    * @param {number} estimatedCompressionRatio - Expected compression ratio (0-1)
    * @returns {number} Estimated time saved in milliseconds
    */
-  estimateCompressionBenefit(originalSize, speedKbps, estimatedCompressionRatio = 0.5) {
-    const originalTime = this.calculateTransmissionTime(originalSize, speedKbps);
+  estimateCompressionBenefit(
+    originalSize,
+    speedKbps,
+    estimatedCompressionRatio = 0.5
+  ) {
+    const originalTime = this.calculateTransmissionTime(
+      originalSize,
+      speedKbps
+    );
     const compressedSize = originalSize * estimatedCompressionRatio;
-    const compressedTime = this.calculateTransmissionTime(compressedSize, speedKbps);
+    const compressedTime = this.calculateTransmissionTime(
+      compressedSize,
+      speedKbps
+    );
 
     return originalTime - compressedTime;
   }
@@ -95,7 +107,9 @@ class PerformanceAnalyzer {
 
     const recentSpeed = this.getAverageSpeed();
 
-    for (const [profileName, profile] of Object.entries(this.weakNetworkProfiles)) {
+    for (const [profileName, profile] of Object.entries(
+      this.weakNetworkProfiles
+    )) {
       if (recentSpeed >= profile.min && recentSpeed <= profile.max) {
         return { name: profileName, ...profile };
       }
@@ -110,13 +124,18 @@ class PerformanceAnalyzer {
    * @returns {number} Dynamic compression threshold in bytes
    */
   getDynamicThreshold(networkType) {
-    const baseThreshold = this.configManager.getThresholdForNetwork(networkType);
+    const baseThreshold =
+      this.configManager.getThresholdForNetwork(networkType);
     const actualSpeed = this.getAverageSpeed();
     const weakCondition = this.detectWeakNetworkCondition();
 
     // If we have real speed data, use it for dynamic adjustment
     if (actualSpeed) {
-      return this.calculateDynamicThreshold(baseThreshold, actualSpeed, networkType);
+      return this.calculateDynamicThreshold(
+        baseThreshold,
+        actualSpeed,
+        networkType
+      );
     }
 
     // Apply weak network multipliers if detected
@@ -134,19 +153,20 @@ class PerformanceAnalyzer {
    * @param {string} networkType - Standard network type
    * @returns {number} Dynamic threshold in bytes
    */
-  calculateDynamicThreshold(baseThreshold, actualSpeedKbps, networkType) {
-    const expectedSpeed = this.networkSpeedEstimates[networkType];
-    const speedRatio = actualSpeedKbps / expectedSpeed;
-
+  calculateDynamicThreshold(baseThreshold, actualSpeedKbps, _networkType) {
     // Calculate threshold that would result in 1ms transmission time
-    const performanceThreshold = this.configManager.config.performanceOptimization?.performanceThreshold || 1;
+    const performanceThreshold =
+      this.configManager.config.performanceOptimization?.performanceThreshold ||
+      1;
     const maxDataFor1ms = (performanceThreshold * actualSpeedKbps * 1000) / 8;
 
     // Use 50% of the 1ms threshold as compression trigger
     const dynamicThreshold = Math.max(10, Math.floor(maxDataFor1ms * 0.5));
 
     // Blend with base threshold (30% base, 70% performance-based)
-    const blendedThreshold = Math.floor(baseThreshold * 0.3 + dynamicThreshold * 0.7);
+    const blendedThreshold = Math.floor(
+      baseThreshold * 0.3 + dynamicThreshold * 0.7
+    );
 
     return Math.min(blendedThreshold, baseThreshold);
   }
@@ -162,19 +182,28 @@ class PerformanceAnalyzer {
     const {
       forceCompression = false,
       estimatedCompressionRatio = 0.5,
-      usePerformanceOptimization = this.configManager.config.performanceOptimization?.enabled ?? true,
+      usePerformanceOptimization = this.configManager.config
+        .performanceOptimization?.enabled ?? true,
     } = options;
 
     const actualSpeed = this.getAverageSpeed();
-    const weakCondition = this.detectWeakNetworkCondition();
 
-    // Use performance-based analysis if enabled and we have speed data
-    if (usePerformanceOptimization && actualSpeed) {
-      return this.performPerformanceAnalysis(dataSize, networkType, actualSpeed, estimatedCompressionRatio);
+    // Use performance-based analysis if we have valid speed data and performance optimization is enabled
+    if (usePerformanceOptimization && actualSpeed && actualSpeed > 0) {
+      return this.performPerformanceAnalysis(
+        dataSize,
+        networkType,
+        actualSpeed,
+        estimatedCompressionRatio
+      );
     }
 
     // Fallback to standard threshold-based analysis
-    return this.performThresholdAnalysis(dataSize, networkType, forceCompression);
+    return this.performThresholdAnalysis(
+      dataSize,
+      networkType,
+      forceCompression
+    );
   }
 
   /**
@@ -185,16 +214,29 @@ class PerformanceAnalyzer {
    * @param {number} estimatedCompressionRatio - Expected compression ratio
    * @returns {PerformanceResult} Performance analysis result
    */
-  performPerformanceAnalysis(dataSize, networkType, actualSpeedKbps, estimatedCompressionRatio) {
-    const estimatedTime = this.calculateTransmissionTime(dataSize, actualSpeedKbps);
-    const compressionBenefit = this.estimateCompressionBenefit(dataSize, actualSpeedKbps, estimatedCompressionRatio);
+  performPerformanceAnalysis(
+    dataSize,
+    networkType,
+    actualSpeedKbps,
+    estimatedCompressionRatio
+  ) {
+    const estimatedTime = this.calculateTransmissionTime(
+      dataSize,
+      actualSpeedKbps
+    );
+    const compressionBenefit = this.estimateCompressionBenefit(
+      dataSize,
+      actualSpeedKbps,
+      estimatedCompressionRatio
+    );
     const dynamicThreshold = this.getDynamicThreshold(networkType);
 
-    const shouldCompress = dataSize > dynamicThreshold || estimatedTime > this.performanceThreshold;
+    const shouldCompress =
+      dataSize > dynamicThreshold || estimatedTime > this.performanceThreshold;
 
     let recommendation;
     if (estimatedTime > 10) {
-      recommendation = `CRITICAL: Transmission will take ${estimatedTime.toFixed(2)}ms (${(actualSpeedKbps/1000).toFixed(2)} Mbps). Compression recommended - could save ${compressionBenefit.toFixed(2)}ms`;
+      recommendation = `CRITICAL: Transmission will take ${estimatedTime.toFixed(2)}ms (${(actualSpeedKbps / 1000).toFixed(2)} Mbps). Compression recommended - could save ${compressionBenefit.toFixed(2)}ms`;
     } else if (estimatedTime > this.performanceThreshold) {
       recommendation = `PERFORMANCE: Transmission will take ${estimatedTime.toFixed(2)}ms, exceeding ${this.performanceThreshold}ms threshold. Compression recommended - could save ${compressionBenefit.toFixed(2)}ms`;
     } else if (shouldCompress) {
@@ -215,7 +257,7 @@ class PerformanceAnalyzer {
         estimatedCompressionRatio,
         networkType,
         performanceThreshold: this.performanceThreshold,
-      }
+      },
     };
   }
 
@@ -229,9 +271,14 @@ class PerformanceAnalyzer {
   performThresholdAnalysis(dataSize, networkType, forceCompression) {
     const threshold = this.configManager.getThresholdForNetwork(networkType);
     const estimatedSpeed = this.networkSpeedEstimates[networkType];
-    const estimatedTime = this.calculateTransmissionTime(dataSize, estimatedSpeed);
+    const estimatedTime = this.calculateTransmissionTime(
+      dataSize,
+      estimatedSpeed
+    );
 
-    const shouldCompress = forceCompression || this.configManager.shouldCompressData(dataSize, networkType);
+    const shouldCompress =
+      forceCompression ||
+      this.configManager.shouldCompressData(dataSize, networkType);
 
     let recommendation;
     if (forceCompression) {
@@ -245,7 +292,10 @@ class PerformanceAnalyzer {
     return {
       shouldCompress,
       estimatedTransmissionTime: estimatedTime,
-      compressionBenefit: this.estimateCompressionBenefit(dataSize, estimatedSpeed),
+      compressionBenefit: this.estimateCompressionBenefit(
+        dataSize,
+        estimatedSpeed
+      ),
       recommendation,
       metrics: {
         dataSize,
@@ -253,7 +303,7 @@ class PerformanceAnalyzer {
         threshold,
         networkType,
         usePerformanceOptimization: false,
-      }
+      },
     };
   }
 
@@ -264,12 +314,14 @@ class PerformanceAnalyzer {
   addSpeedSample(sample) {
     this.speedSamples.push({
       ...sample,
-      timestamp: sample.timestamp || Date.now()
+      timestamp: sample.timestamp || Date.now(),
     });
 
     // Keep only recent samples (last 10 minutes)
     const tenMinutesAgo = Date.now() - 10 * 60 * 1000;
-    this.speedSamples = this.speedSamples.filter(s => s.timestamp > tenMinutesAgo);
+    this.speedSamples = this.speedSamples.filter(
+      (s) => s.timestamp > tenMinutesAgo
+    );
 
     // Update average speed
     this.updateAverageSpeed();

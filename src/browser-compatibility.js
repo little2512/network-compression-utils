@@ -446,7 +446,14 @@ class BrowserCompatibilityManager {
    */
   getFeature(featureName) {
     if (this.features[featureName]) {
-      return window[featureName] || global[featureName];
+      // Check if we're in a browser environment
+      if (typeof window !== 'undefined') {
+        return window[featureName];
+      }
+      // Check if we're in Node.js environment
+      if (typeof global !== 'undefined') {
+        return global[featureName];
+      }
     }
 
     if (this.polyfills.has(featureName)) {

@@ -1,446 +1,472 @@
-# Format Conversion
+# String Output Format
 
-This document describes the format conversion functionality implemented in Stage 5.
+This document describes the string-based output format implemented in the network compression library.
 
 ## Overview
 
-The `FormatConverter` class provides comprehensive data format conversion capabilities, supporting transformation between different data representations commonly used in web applications. It seamlessly integrates with the compression and network detection systems.
+The `NetworkCompressionUtils` class provides optimized string-based data compression, specifically designed for network transmission. The library focuses on string output format that integrates seamlessly with compression and network detection systems.
 
-## Supported Output Formats
-
-### URLSearchParams (Query String Format)
-- **Use Case**: HTTP query parameters, URL construction, API requests
-- **Browser Support**: Universal (built-in browser API)
-- **Character Encoding**: URL-encoded (UTF-8)
-- **Size Limit**: ~2048 bytes (typical URL limit)
-- **Best For**: Small to medium datasets, HTTP requests
-
-### FormData (Multipart Format)
-- **Use Case**: File uploads, form submissions, multipart HTTP requests
-- **Browser Support**: Universal (built-in browser API)
-- **File Support**: Native support for File and Blob objects
-- **Size Limit**: Large (supports file uploads)
-- **Best For**: Forms with files, large datasets
+## Output Format
 
 ### String (JSON Format)
-- **Use Case**: API responses, data storage, general purpose
+- **Use Case**: API responses, data storage, network transmission, general purpose
 - **Browser Support**: Universal (native JSON support)
-- **Encoding**: Plain text or JSON
+- **Encoding**: Plain text with optional compression
 - **Size Limit**: Large (limited only by memory)
-- **Best For**: Complex data structures, API communication
+- **Best For**: Complex data structures, API communication, network optimization
 
 ## API Reference
 
-### Core Methods
+### Core Method
 
-#### `convertToFormat(data, targetFormat, options): FormatResult`
-Converts data to the specified format.
+#### `compress(options): CompressionResult`
+Compresses data to optimized string format with network-aware decision making.
 
-#### `convertBetweenFormats(data, sourceFormat, targetFormat, options): FormatResult`
-Converts data between two different formats.
+**Options:**
+- `data` (any): The data to compress
+- `forceCompression` (boolean): Force compression regardless of network conditions
+- `networkType` (string): Override network type detection
+- `algorithm` (string): Override algorithm selection
 
-#### `toString(data, options): string`
-Converts data to string representation with options.
-
-#### `toUrlSearchParams(data, options): URLSearchParams`
-Converts data to URLSearchParams format.
-
-#### `toFormData(data, options): FormData`
-Converts data to FormData format.
+**Returns:**
+```javascript
+{
+  compressed: boolean,
+  data: string,           // Always string format
+  originalSize: number,
+  compressedSize?: number,
+  compressionRatio?: number,
+  algorithm: string,
+  networkType: string,
+  processingTime: number
+}
+```
 
 ### Utility Methods
 
-#### `getDataSize(data, format): number`
-Calculates the size of data in bytes for a specific format.
+#### `getDataSize(data): number`
+Calculates the estimated size of data in bytes.
 
-#### `validateFormat(data, format): ValidationResult`
-Validates data compatibility with target format.
+#### `recommendFormat(data): string`
+Recommends the best compression approach for given data.
 
-#### `recommendFormat(data, context): string`
-Recommends the best format for given data and context.
-
-#### `getFormatInfo(format): Object`
-Provides detailed information about a format.
+#### `getSupportedFormats(): string[]`
+Returns list of supported compression algorithms.
 
 ## Usage Examples
 
-### Basic Format Conversion
-
-```javascript
-import { FormatConverter } from 'network-compression-utils';
-
-const converter = new FormatConverter();
-
-// Convert object to URLSearchParams
-const data = { name: 'John', age: 30, city: 'New York' };
-const urlResult = converter.convertToFormat(data, 'urlsearch');
-
-console.log(urlResult.data.toString());
-// "name=John&age=30&city=New+York"
-
-// Convert object to FormData
-const formResult = converter.convertToFormat(data, 'formdata');
-
-// Convert object to JSON string
-const stringResult = converter.convertToFormat(data, 'string');
-console.log(stringResult.data);
-// '{"name":"John","age":30,"city":"New York"}'
-```
-
-### Advanced Options
-
-```javascript
-// String conversion with pretty formatting
-const prettyResult = converter.convertToFormat(data, 'string', {
-  pretty: true
-});
-console.log(prettyResult.data);
-// {
-//   "name": "John",
-//   "age": 30,
-//   "city": "New York"
-// }
-
-// String conversion with base64 encoding
-const base64Result = converter.convertToFormat(data, 'string', {
-  base64: true
-});
-
-// URLSearchParams with custom prefix and array handling
-const complexData = {
-  user: {
-    name: 'John',
-    tags: ['developer', 'javascript', 'react']
-  }
-};
-
-const urlResult = converter.convertToFormat(complexData, 'urlsearch', {
-  prefix: 'api',
-  arrayFormat: 'indices', // 'brackets', 'indices', or 'repeat'
-});
-// "api.user.name=John&api.user.tags[0]=developer&api.user.tags[1]=javascript&api.user.tags[2]=react"
-```
-
-### Format Conversion Between Types
-
-```javascript
-// Convert URLSearchParams back to object
-const params = new URLSearchParams('name=John&age=30');
-const result = converter.convertBetweenFormats(params, 'urlsearch', 'string');
-
-// Convert between all supported formats
-const originalData = { user: 'John', active: true };
-
-// String → URLSearchParams → FormData → String
-const urlResult = converter.convertBetweenFormats(originalData, 'string', 'urlsearch');
-const formResult = converter.convertBetweenFormats(urlResult.data, 'urlsearch', 'formdata');
-const finalResult = converter.convertBetweenFormats(formResult.data, 'formdata', 'string');
-```
-
-### Handling Complex Data Structures
-
-```javascript
-const complexData = {
-  user: {
-    profile: {
-      name: 'John Doe',
-      addresses: [
-        { type: 'home', street: '123 Main St', city: 'New York' },
-        { type: 'work', street: '456 Office Blvd', city: 'San Francisco' }
-      ],
-      preferences: {
-        theme: 'dark',
-        notifications: ['email', 'sms', 'push'],
-        privacy: {
-          showEmail: true,
-          showLocation: false
-        }
-      }
-  },
-  metadata: {
-    created: new Date(),
-    version: '1.0.0'
-  }
-};
-
-// Convert to URLSearchParams (flattened)
-const urlResult = converter.convertToFormat(complexData, 'urlsearch');
-// user.profile.name=John+Doe
-// user.profile.addresses[0].type=home
-// user.profile.addresses[0].street=123+Main+St
-// user.profile.addresses[0].city=New+York
-// user.profile.preferences.theme=dark
-// user.profile.preferences.notifications[0]=email
-// user.profile.privacy.showEmail=true
-// user.metadata.created=2023-01-01T00:00:00.000Z
-// user.metadata.version=1.0.0
-```
-
-### File and Blob Handling
-
-```javascript
-const file = new File(['content'], 'document.pdf', { type: 'application/pdf' });
-const data = {
-  name: 'John Doe',
-  document: file,
-  avatar: new Blob(['avatar-image-data'], { type: 'image/jpeg' })
-};
-
-// FormData handles files natively
-const formResult = converter.convertToFormat(data, 'formdata');
-console.log(formResult.data.get('document')); // File object
-console.log(formResult.data.get('avatar')); // Blob object
-
-// URLSearchParams converts files to string representations
-const urlResult = converter.convertToFormat(data, 'urlsearch');
-// Warning: File/Blob objects will be converted to filenames in URLSearchParams
-```
-
-### Format Validation
-
-```javascript
-const data = { name: 'John', file: new File(['content'], 'test.txt') };
-
-// Validate URLSearchParams compatibility
-const urlValidation = converter.validateFormat(data, 'urlsearch');
-console.log(urlValidation);
-// {
-//   valid: true,
-//   warnings: ['File/Blob objects will be converted to filenames in URLSearchParams'],
-//   errors: []
-// }
-
-// Validate FormData compatibility
-const formValidation = converter.validateFormat(data, 'formdata');
-// {
-//   valid: true,
-//   warnings: [],
-//   errors: []
-// }
-```
-
-### Format Recommendations
-
-```javascript
-// Get format recommendations based on data and context
-const data = { user: 'John', preferences: { theme: 'dark' } };
-
-// For file uploads
-const fileData = { document: new File(['content'], 'doc.pdf') };
-const fileRecommendation = converter.recommendFormat(fileData, { hasFiles: true });
-// 'formdata'
-
-// For URL parameters
-const urlRecommendation = converter.recommendFormat(data, { useCase: 'url' });
-// 'urlsearch'
-
-// For small data
-const smallRecommendation = converter.recommendFormat(data, { maxSize: 100 });
-// 'urlsearch'
-
-// For general use
-const generalRecommendation = converter.recommendFormat(data, { useCase: 'general' });
-// 'string'
-```
-
-### Data Size Calculation
-
-```javascript
-const data = { name: 'John', description: 'A long text description...'.repeat(10) };
-
-// Calculate size for different formats
-const stringSize = converter.getDataSize(data, 'string');
-const urlSize = converter.getDataSize(converter.convertToFormat(data, 'urlsearch').data, 'urlsearch');
-const formSize = converter.getDataSize(converter.convertToFormat(data, 'formdata').data, 'formdata');
-
-console.log(`String: ${stringSize} bytes`);
-console.log(`URLSearchParams: ${urlSize} bytes`);
-console.log(`FormData: ${formSize} bytes`);
-```
-
-## Array Handling Options
-
-### Brackets Format (Default)
-```javascript
-const data = { items: ['apple', 'banana', 'cherry'] };
-const result = converter.convertToFormat(data, 'urlsearch', { arrayFormat: 'brackets' });
-// items[]=apple&items[]=banana&items[]=cherry
-```
-
-### Indices Format
-```javascript
-const result = converter.convertToFormat(data, 'urlsearch', { arrayFormat: 'indices' });
-// items[0]=apple&items[1]=banana&items[2]=cherry
-```
-
-### Repeat Format
-```javascript
-const result = converter.convertToFormat(data, 'urlsearch', { arrayFormat: 'repeat' });
-// items=apple&items=banana&items=cherry
-```
-
-## Integration with Compression System
-
-The format converter is integrated into the main `NetworkCompressionUtils` class:
+### Basic Compression
 
 ```javascript
 import { NetworkCompressionUtils } from 'network-compression-utils';
 
 const ncu = new NetworkCompressionUtils();
 
-// Process data with specific output format
+// Compress data to string format
+const data = {
+  user: 'John',
+  preferences: ['email', 'sms'],
+  metadata: { timestamp: Date.now() }
+};
+
+const result = ncu.compress({ data });
+
+console.log(result.data); // Compressed string
+console.log(typeof result.data); // 'string'
+console.log(result.compressed); // true/false based on compression decision
+```
+
+### Force Compression
+
+```javascript
+// Force compression even for small data
 const result = ncu.compress({
-  data: { user: 'John', preferences: ['email', 'sms'] },
-  outputFormat: 'urlsearch', // or 'formdata', 'string'
+  data: { message: 'Hello World' },
+  forceCompression: true
 });
 
-console.log(result);
+console.log(result.compressed); // true
+console.log(result.algorithm); // 'LZ-String'
+```
+
+### Network-Aware Compression
+
+```javascript
+// Override network type for testing
+const slowResult = ncu.compress({
+  data: largeDataObject,
+  networkType: '2g'
+});
+
+const fastResult = ncu.compress({
+  data: largeDataObject,
+  networkType: '4g'
+});
+
+// Compression thresholds adapt to network conditions
+```
+
+## Compression Algorithms
+
+### LZ-String (Default)
+- **Use Case**: General purpose compression
+- **Browser Support**: Universal with polyfill
+- **Performance**: Good balance of speed and ratio
+- **Best For**: Text data, JSON objects, repetitive content
+
+### Algorithm Selection
+
+The library automatically selects the best algorithm based on:
+
+1. **Network Conditions**: Slower networks get more aggressive compression
+2. **Data Characteristics**: Repetitive data compresses better
+3. **Performance Thresholds**: Compression must save >1ms transmission time
+
+```javascript
+// Get available algorithms
+const algorithms = ncu.getSupportedFormats();
+console.log(algorithms); // ['LZ-String']
+
+// Get algorithm information
+const info = ncu.getFormatInfo('lzstring');
+console.log(info.name); // 'LZ-String'
+```
+
+## Network Optimization
+
+### Performance-Based Compression
+
+The library uses intelligent compression based on network analysis:
+
+```javascript
+// Get current network information
+const networkInfo = ncu.getNetworkInfo();
+console.log(networkInfo);
 // {
-//   compressed: true,
-//   data: URLSearchParams('user=John&preferences[0]=email&preferences[1]=sms'),
-//   outputFormat: 'urlsearch',
-//   networkType: '4g',
-//   algorithm: 'lz-string',
-//   processingTime: 12.5
+//   effectiveType: '4g',
+//   downlink: 10,
+//   rtt: 100,
+//   saveData: false
+// }
+
+// Get network performance status
+const perfStatus = ncu.getNetworkPerformanceStatus();
+console.log(perfStatus);
+// {
+//   currentSpeed: '4g',
+//   speedCategory: 'fast',
+//   isOptimalForCompression: true,
+//   recommendation: 'use_default_thresholds'
 // }
 ```
 
-## Format Information
+### Weak Network Optimization
 
-Each format provides detailed information:
+For slow connections (<5 Kbps), the library provides specialized optimization:
 
 ```javascript
-const converter = new FormatConverter();
+// Simulate slow network
+const result = ncu.compress({
+  data: largeData,
+  networkType: 'slow-2g'
+});
 
-const urlInfo = converter.getFormatInfo('urlsearch');
-console.log(urlInfo);
+// Library applies ultra-aggressive compression for very slow networks
+```
+
+## Data Size and Performance
+
+### Size Calculation
+
+```javascript
+const data = {
+  user: 'John',
+  items: Array(100).fill('test data')
+};
+
+// Get estimated size
+const size = ncu.getDataSize(data);
+console.log(`Estimated size: ${size} bytes`);
+
+// After compression
+const result = ncu.compress({ data });
+if (result.compressed) {
+  const savings = result.originalSize - result.compressedSize;
+  const ratio = (savings / result.originalSize * 100).toFixed(1);
+  console.log(`Compression savings: ${savings} bytes (${ratio}%)`);
+}
+```
+
+### Performance Metrics
+
+```javascript
+// Get compression statistics
+const stats = ncu.getCompressionStats();
+console.log(stats);
 // {
-//   name: 'URLSearchParams',
-//   description: 'URL-encoded query string format',
-//   useCase: 'HTTP query parameters, URL construction',
-//   browserSupport: 'Universal',
-//   maxSize: '2048 bytes (URL limit)'
+//   totalCompressions: 150,
+//   successfulCompressions: 120,
+//   totalDataProcessed: 1024000,
+//   totalDataSaved: 256000,
+//   averageCompressionRatio: 0.25,
+//   averageProcessingTime: 5.2
 // }
+
+// Get detailed performance analysis
+const analysis = ncu.getPerformanceAnalysis();
+console.log(analysis);
+// {
+//   algorithmPerformance: { 'LZ-String': { ... } },
+//   networkTypePerformance: { '4g': { ... }, '3g': { ... } },
+//   compressionThresholds: { '4g': 1024, '3g': 512, '2g': 256 },
+//   recommendations: [...]
+// }
+```
+
+## Configuration Management
+
+### Custom Configuration
+
+```javascript
+// Update compression settings
+ncu.updateConfig({
+  minCompressionRatio: 0.3,        // Require 30% compression
+  enableFallback: true,           // Enable fallback for errors
+  preferSmallest: true,           // Always prefer smallest result
+  performanceThreshold: 2         // 2ms transmission time threshold
+});
+
+// Get current configuration
+const config = ncu.getConfig();
+console.log(config);
+// {
+//   minCompressionRatio: 0.3,
+//   enableFallback: true,
+//   preferSmallest: true,
+//   performanceThreshold: 2,
+//   maxDataSize: 1048576,
+//   // ... other settings
+// }
+```
+
+### Configuration Summary
+
+```javascript
+// Get human-readable configuration summary
+const summary = ncu.getConfigSummary();
+console.log(summary);
+// "Network-aware compression enabled: minRatio=30%, threshold=2ms, fallback=enabled"
 ```
 
 ## Error Handling
 
-The format converter provides robust error handling:
+The library provides robust error handling:
 
 ```javascript
-// Handle unsupported formats
-const result = converter.convertToFormat(data, 'unsupported');
-if (!result.success) {
-  console.error('Conversion failed:', result.error);
-}
-
 // Handle circular references
 const circularData = { name: 'test' };
 circularData.self = circularData;
 
-const stringResult = converter.convertToFormat(circularData, 'string');
-console.log(stringResult.data); // String representation with circular reference handling
+const result = ncu.compress({ data: circularData });
+console.log(result.compressed); // false
+console.log(result.data); // Original data as string
+
+// Handle invalid data
+const invalidResult = ncu.compress({ data: null });
+console.log(invalidResult); // Valid result object
+
+// Get browser compatibility information
+const compat = ncu.getBrowserCompatibility();
+console.log(compat);
+// {
+//   hasCompressionSupport: true,
+//   hasNetworkSupport: true,
+//   polyfillsNeeded: []
+// }
 ```
 
-## Performance Considerations
+## Integration Examples
 
-### Memory Usage
-- Format conversion creates new objects, consider reuse for large datasets
-- File/Blob objects are handled by reference, not copied
-- Large objects may require significant memory for string conversion
+### HTTP Requests
 
-### Processing Time
-- URLSearchParams: Fast for simple objects, slower for deeply nested structures
-- FormData: Fast for all data types, handles files efficiently
-- String: Fast for simple data, slower for complex objects requiring JSON serialization
+```javascript
+// Send compressed data via fetch
+async function sendCompressedData(data) {
+  const ncu = new NetworkCompressionUtils();
+  const result = ncu.compress({ data });
 
-### Size Optimization
-- URLSearchParams: Best for small datasets (< 2KB)
-- FormData: Best for datasets with files or binary data
-- String: Best for complex structures and API communication
+  const response = await fetch('/api/data', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'X-Compressed': result.compressed.toString()
+    },
+    body: result.data // Always string
+  });
+
+  return response.json();
+}
+```
+
+### WebSockets
+
+```javascript
+// Send compressed data via WebSocket
+const ws = new WebSocket('ws://example.com/socket');
+const ncu = new NetworkCompressionUtils();
+
+ws.onopen = () => {
+  const message = {
+    type: 'update',
+    payload: largeDataObject
+  };
+
+  const compressed = ncu.compress({ data: message });
+  ws.send(compressed.data); // Send compressed string
+};
+```
+
+### Local Storage
+
+```javascript
+// Store compressed data in localStorage
+const ncu = new NetworkCompressionUtils();
+
+function saveData(key, data) {
+  const result = ncu.compress({ data, forceCompression: true });
+  localStorage.setItem(key, result.data);
+}
+
+function loadData(key) {
+  const compressed = localStorage.getItem(key);
+  if (compressed) {
+    // Decompression would be handled by the receiving end
+    return JSON.parse(compressed);
+  }
+  return null;
+}
+```
 
 ## Browser Compatibility
 
 ### Universal Support
-All formats are supported in all modern browsers:
-- **Chrome**: Full support
-- **Firefox**: Full support
-- **Safari**: Full support
-- **Edge**: Full support
+The library works in all modern browsers:
+
+- **Chrome**: Full support (v60+)
+- **Firefox**: Full support (v55+)
+- **Safari**: Full support (v12+)
+- **Edge**: Full support (v79+)
 - **Mobile**: Full support on iOS Safari and Android Chrome
 
-### Format-Specific Considerations
+### Polyfill Support
+The library includes necessary polyfills:
 
-#### URLSearchParams
-- Native in all modern browsers
-- Automatically handles URL encoding
-- Limited to string values
-
-#### FormData
-- Native in all modern browsers
-- Supports File and Blob objects
-- Automatically handles multipart boundaries
-
-#### String/JSON
-- Native JSON.parse/stringify in all browsers
-- Circular reference handling in modern browsers
-- UTF-8 encoding support
+```javascript
+// Check polyfill status
+const polyfillStatus = ncu.getPolyfillStatus();
+console.log(polyfillStatus);
+// {
+//   needsLZString: false, // Built-in support or polyfill loaded
+//   needsNetworkAPI: false,
+//   loadedPolyfills: []
+// }
+```
 
 ## Best Practices
 
-### Format Selection Guidelines
-
-1. **Use URLSearchParams for**:
-   - HTTP query parameters
-   - Small to medium datasets (< 2KB)
-   - URL construction
-   - Form submissions without files
-
-2. **Use FormData for**:
-   - File uploads
-   - Form submissions with binary data
-   - Large datasets
-   - Multipart HTTP requests
-
-3. **Use String for**:
-   - API responses and requests
-   - Complex data structures
-   - Data storage
-   - General purpose communication
-
 ### Performance Optimization
 
-1. **Reuse FormatConverter Instances**
+1. **Reuse Instances**
    ```javascript
-   const converter = new FormatConverter(); // Create once, reuse
+   const ncu = new NetworkCompressionUtils(); // Create once, reuse
    ```
 
-2. **Choose Appropriate Format Early**
+2. **Let Network Detection Work**
    ```javascript
-   const format = converter.recommendFormat(data, context);
-   // Use the recommended format throughout your application
+   // Good: Let library detect network
+   const result = ncu.compress({ data });
+
+   // Avoid: Manual override unless necessary
+   // const result = ncu.compress({ data, networkType: '4g' });
    ```
 
-3. **Handle Large Data Carefully**
+3. **Monitor Performance**
    ```javascript
-   if (converter.getDataSize(data, 'string') > 1024 * 1024) {
-     // Consider streaming or chunking for very large data
+   // Check compression effectiveness
+   const stats = ncu.getCompressionStats();
+   if (stats.averageCompressionRatio < 0.1) {
+     // Consider adjusting data or configuration
    }
    ```
 
-### Security Considerations
+### Data Optimization
 
-1. **URL Encoding**: URLSearchParams automatically encodes special characters
-2. **File Handling**: FormData maintains file type and size information
-3. **Data Sanitization**: Always validate and sanitize data before conversion
-4. **Size Limits**: Consider URL length limits for URLSearchParams
+1. **Structure Data for Compression**
+   ```javascript
+   // Good: Repetitive data compresses well
+   const goodData = {
+     type: 'user_profile',
+     items: Array(100).fill('similar_item'),
+     metadata: { category: 'test_category' }
+   };
+
+   // Poor: Random data compresses poorly
+   const poorData = {
+     random1: Math.random(),
+     random2: Math.random().toString(36)
+   };
+   ```
+
+2. **Size Considerations**
+   ```javascript
+   // Check data size before compression
+   const size = ncu.getDataSize(data);
+   if (size > 1024 * 1024) { // > 1MB
+     // Consider chunking large data
+   }
+   ```
+
+### Error Prevention
+
+1. **Validate Input**
+   ```javascript
+   function safeCompress(data) {
+     try {
+       return ncu.compress({ data });
+     } catch (error) {
+       console.error('Compression failed:', error);
+       return {
+         compressed: false,
+         data: JSON.stringify(data),
+         error: error.message
+       };
+     }
+   }
+   ```
+
+2. **Handle Network Changes**
+   ```javascript
+   // React to network condition changes
+   function handleNetworkChange() {
+     const status = ncu.getNetworkPerformanceStatus();
+     if (status.recommendation === 'increase_compression') {
+       ncu.updateConfig({ minCompressionRatio: 0.2 });
+     }
+   }
+   ```
 
 ## Testing
 
-Comprehensive tests are provided in `src/format-converter.test.js`:
+Comprehensive tests are provided in the test suite:
 
-- **Format Conversion Tests**: All format conversions with various data types
-- **Error Handling Tests**: Invalid formats, circular references, edge cases
-- **Performance Tests**: Large datasets, memory usage, processing time
-- **Integration Tests**: Format conversion between different types
-- **Validation Tests**: Format compatibility and recommendation logic
+- **Basic Compression**: String format compression with various data types
+- **Network Awareness**: Compression behavior under different network conditions
+- **Performance Analysis**: Compression statistics and performance metrics
+- **Error Handling**: Invalid data, circular references, edge cases
+- **Browser Compatibility**: Cross-browser functionality testing
+- **Integration**: Real-world usage scenarios
+
+Run tests with:
+```bash
+npm test
+```

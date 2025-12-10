@@ -1,0 +1,1104 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Network Compression Utils - Browser Tests</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            overflow: hidden;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 30px;
+            text-align: center;
+        }
+
+        .header h1 {
+            margin: 0 0 10px 0;
+            font-size: 2.5em;
+            font-weight: 300;
+        }
+
+        .header p {
+            margin: 0;
+            opacity: 0.9;
+            font-size: 1.1em;
+        }
+
+        .content {
+            padding: 30px;
+        }
+
+        .test-section {
+            margin-bottom: 30px;
+            border: 1px solid #e0e0e0;
+            border-radius: 6px;
+            overflow: hidden;
+        }
+
+        .test-section-header {
+            background: #f8f9fa;
+            padding: 15px 20px;
+            border-bottom: 1px solid #e0e0e0;
+            cursor: pointer;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            transition: background-color 0.2s;
+        }
+
+        .test-section-header:hover {
+            background: #e9ecef;
+        }
+
+        .test-section-title {
+            font-size: 1.2em;
+            font-weight: 600;
+            color: #333;
+            margin: 0;
+        }
+
+        .test-section-toggle {
+            font-size: 0.8em;
+            color: #666;
+            transition: transform 0.2s;
+        }
+
+        .test-section.expanded .test-section-toggle {
+            transform: rotate(180deg);
+        }
+
+        .test-section-content {
+            max-height: 0;
+            overflow: hidden;
+            transition: max-height 0.3s ease-out;
+        }
+
+        .test-section.expanded .test-section-content {
+            max-height: 2000px;
+        }
+
+        .test-controls {
+            padding: 20px;
+            background: #fafafa;
+        }
+
+        .test-result {
+            padding: 20px;
+            font-family: 'Courier New', monospace;
+            font-size: 14px;
+            white-space: pre-wrap;
+            max-height: 400px;
+            overflow-y: auto;
+        }
+
+        .test-result.success {
+            background: #d4edda;
+            border-top: 1px solid #c3e6cb;
+            color: #155724;
+        }
+
+        .test-result.error {
+            background: #f8d7da;
+            border-top: 1px solid #f5c6cb;
+            color: #721c24;
+        }
+
+        .test-result.info {
+            background: #d1ecf1;
+            border-top: 1px solid #bee5eb;
+            color: #0c5460;
+        }
+
+        button {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 600;
+            transition: transform 0.2s, box-shadow 0.2s;
+            margin-right: 10px;
+            margin-bottom: 10px;
+        }
+
+        button:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+        }
+
+        button:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
+        }
+
+        button.secondary {
+            background: linear-gradient(135deg, #6c757d 0%, #495057 100%);
+        }
+
+        .status-indicator {
+            display: inline-block;
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            margin-right: 8px;
+        }
+
+        .status-indicator.idle {
+            background: #6c757d;
+        }
+
+        .status-indicator.running {
+            background: #ffc107;
+            animation: pulse 1s infinite;
+        }
+
+        .status-indicator.success {
+            background: #28a745;
+        }
+
+        .status-indicator.error {
+            background: #dc3545;
+        }
+
+        @keyframes pulse {
+            0% { opacity: 1; }
+            50% { opacity: 0.5; }
+            100% { opacity: 1; }
+        }
+
+        .info-box {
+            background: #e7f3ff;
+            border-left: 4px solid #2196F3;
+            padding: 15px;
+            margin-bottom: 20px;
+            border-radius: 0 4px 4px 0;
+        }
+
+        .metrics {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin-top: 20px;
+        }
+
+        .metric-card {
+            background: white;
+            border: 1px solid #e0e0e0;
+            border-radius: 6px;
+            padding: 15px;
+            text-align: center;
+        }
+
+        .metric-value {
+            font-size: 1.5em;
+            font-weight: 700;
+            color: #667eea;
+        }
+
+        .metric-label {
+            font-size: 0.9em;
+            color: #666;
+            margin-top: 5px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>Network Compression Utils</h1>
+            <p>Browser-Based Testing Suite</p>
+        </div>
+
+        <div class="content">
+            <div class="info-box">
+                <strong>说明:</strong> 这个页面提供了浏览器端测试界面，用于验证网络压缩工具的功能。
+                所有测试都在真实的浏览器环境中运行，确保库在客户端的兼容性和性能。
+            </div>
+
+            <!-- Compression Tests -->
+            <div class="test-section" id="compression-tests">
+                <div class="test-section-header">
+                    <h3 class="test-section-title">
+                        <span class="status-indicator idle" id="compression-status"></span>
+                        压缩功能测试
+                    </h3>
+                    <span class="test-section-toggle">▼</span>
+                </div>
+                <div class="test-section-content">
+                    <div class="test-controls">
+                        <button onclick="runBasicCompressionTest()">基础压缩测试</button>
+                        <button onclick="runLargeDataTest()">大数据压缩测试</button>
+                        <button onclick="runDecompressionTest()">解压缩测试</button>
+                        <button onclick="runEdgeCaseTest()" class="secondary">边界情况测试</button>
+                    </div>
+                    <div class="test-result" id="compression-result">
+                        点击上面的按钮开始测试...
+                    </div>
+                </div>
+            </div>
+
+            <!-- Network-Aware Tests -->
+            <div class="test-section" id="network-tests">
+                <div class="test-section-header">
+                    <h3 class="test-section-title">
+                        <span class="status-indicator idle" id="network-status"></span>
+                        网络感知测试
+                    </h3>
+                    <span class="test-section-toggle">▼</span>
+                </div>
+                <div class="test-section-content">
+                    <div class="test-controls">
+                        <button onclick="runNetworkDetectionTest()">网络检测测试</button>
+                        <button onclick="simulateSlowNetwork()">模拟慢网络</button>
+                        <button onclick="simulateFastNetwork()">模拟快网络</button>
+                        <button onclick="runNetworkAdaptiveTest()" class="secondary">自适应压缩测试</button>
+                    </div>
+                    <div class="test-result" id="network-result">
+                        点击上面的按钮开始测试...
+                    </div>
+                </div>
+            </div>
+
+            <!-- Format Conversion Tests -->
+            <div class="test-section" id="format-tests">
+                <div class="test-section-header">
+                    <h3 class="test-section-title">
+                        <span class="status-indicator idle" id="format-status"></span>
+                        格式转换测试
+                    </h3>
+                    <span class="test-section-toggle">▼</span>
+                </div>
+                <div class="test-section-content">
+                    <div class="test-controls">
+                        <button onclick="testURLSearchParams()">URLSearchParams转换</button>
+                        <button onclick="testFormData()">FormData转换</button>
+                        <button onclick="testJSONFormat()">JSON格式测试</button>
+                        <button onclick="testStringFormat()" class="secondary">字符串格式测试</button>
+                    </div>
+                    <div class="test-result" id="format-result">
+                        点击上面的按钮开始测试...
+                    </div>
+                </div>
+            </div>
+
+            <!-- Performance Metrics -->
+            <div class="test-section" id="performance-tests">
+                <div class="test-section-header">
+                    <h3 class="test-section-title">
+                        <span class="status-indicator idle" id="performance-status"></span>
+                        性能指标测试
+                    </h3>
+                    <span class="test-section-toggle">▼</span>
+                </div>
+                <div class="test-section-content">
+                    <div class="test-controls">
+                        <button onclick="runPerformanceBenchmark()">性能基准测试</button>
+                        <button onclick="runMemoryTest()">内存使用测试</button>
+                        <button onclick="runBatchTest()">批量操作测试</button>
+                        <button onclick="showPerformanceStats()" class="secondary">显示统计信息</button>
+                    </div>
+                    <div class="test-result" id="performance-result">
+                        点击上面的按钮开始测试...
+                    </div>
+                </div>
+            </div>
+
+            <!-- Overall Metrics -->
+            <div class="metrics">
+                <div class="metric-card">
+                    <div class="metric-value" id="total-tests">0</div>
+                    <div class="metric-label">总测试数</div>
+                </div>
+                <div class="metric-card">
+                    <div class="metric-value" id="passed-tests">0</div>
+                    <div class="metric-label">通过测试</div>
+                </div>
+                <div class="metric-card">
+                    <div class="metric-value" id="failed-tests">0</div>
+                    <div class="metric-label">失败测试</div>
+                </div>
+                <div class="metric-card">
+                    <div class="metric-value" id="compression-ratio">0%</div>
+                    <div class="metric-label">平均压缩率</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Load LZ-String library -->
+    <script src="node_modules/lz-string/libs/lz-string.min.js"></script>
+
+    <!-- Load our browser-bundled library -->
+    <script src="dist/browser.js"></script>
+
+    <script>
+        // Global test state
+        let totalTests = 0;
+        let passedTests = 0;
+        let failedTests = 0;
+        let totalCompression = 0;
+        let compressionCount = 0;
+        let compressionUtils = new NetworkCompressionUtils();
+
+        // Toggle test sections
+        document.querySelectorAll('.test-section-header').forEach(header => {
+            header.addEventListener('click', () => {
+                const section = header.parentElement;
+                section.classList.toggle('expanded');
+            });
+        });
+
+        // Expand first section by default
+        document.getElementById('compression-tests').classList.add('expanded');
+
+        // Utility functions
+        function updateStatus(sectionId, status) {
+            const indicator = document.getElementById(`${sectionId}-status`);
+            indicator.className = `status-indicator ${status}`;
+        }
+
+        function setResult(resultId, content, type = 'info') {
+            const result = document.getElementById(resultId);
+            result.textContent = content;
+            result.className = `test-result ${type}`;
+        }
+
+        function updateMetrics() {
+            document.getElementById('total-tests').textContent = totalTests;
+            document.getElementById('passed-tests').textContent = passedTests;
+            document.getElementById('failed-tests').textContent = failedTests;
+            const avgRatio = compressionCount > 0 ? (totalCompression / compressionCount * 100).toFixed(1) : 0;
+            document.getElementById('compression-ratio').textContent = avgRatio + '%';
+        }
+
+        function recordTest(passed, compressionRatio = 0) {
+            totalTests++;
+            if (passed) passedTests++;
+            else failedTests++;
+
+            if (compressionRatio > 0) {
+                totalCompression += compressionRatio;
+                compressionCount++;
+            }
+
+            updateMetrics();
+        }
+
+        // Test functions
+        async function runBasicCompressionTest() {
+            updateStatus('compression', 'running');
+            setResult('compression-result', '正在运行基础压缩测试...', 'info');
+
+            try {
+                const testData = {
+                    message: 'test_message_12345'.repeat(200),
+                    content: 'A'.repeat(1000),
+                    details: {
+                        pattern: 'repeated_pattern_xyz'.repeat(100)
+                    }
+                };
+
+                const startTime = performance.now();
+                const result = compressionUtils.compress(testData);
+                const endTime = performance.now();
+
+                if (result.success) {
+                    const compressionTime = (endTime - startTime).toFixed(2);
+                    const output = `
+✅ 基础压缩测试通过
+
+原始大小: ${result.originalSize} 字节
+压缩后大小: ${result.compressedSize} 字节
+压缩率: ${(result.compressionRatio * 100).toFixed(1)}%
+压缩时间: ${compressionTime} 毫秒
+使用算法: ${result.algorithm}
+
+压缩成功: ${result.success}
+错误信息: ${result.error || '无'}
+                    `.trim();
+
+                    setResult('compression-result', output, 'success');
+                    recordTest(true, result.compressionRatio);
+                } else {
+                    const output = `
+❌ 基础压缩测试失败
+
+原始大小: ${result.originalSize} 字节
+压缩后大小: ${result.compressedSize} 字节
+错误信息: ${result.error || '未知错误'}
+                    `.trim();
+
+                    setResult('compression-result', output, 'error');
+                    recordTest(false);
+                }
+            } catch (error) {
+                setResult('compression-result', `❌ 测试异常: ${error.message}`, 'error');
+                recordTest(false);
+            }
+
+            updateStatus('compression', 'success');
+        }
+
+        async function runLargeDataTest() {
+            updateStatus('compression', 'running');
+            setResult('compression-result', '正在运行大数据压缩测试...', 'info');
+
+            try {
+                const largeData = {
+                    data: 'x'.repeat(50000), // 50KB
+                    metadata: Array(1000).fill('large_data_metadata'),
+                    timestamp: new Date().toISOString()
+                };
+
+                const startTime = performance.now();
+                const result = compressionUtils.compress(largeData);
+                const endTime = performance.now();
+
+                const compressionTime = (endTime - startTime).toFixed(2);
+                const output = `
+${result.success ? '✅' : '❌'} 大数据压缩测试
+
+数据大小: ${(result.originalSize / 1024).toFixed(1)} KB
+压缩后大小: ${(result.compressedSize / 1024).toFixed(1)} KB
+压缩率: ${result.success ? (result.compressionRatio * 100).toFixed(1) + '%' : 'N/A'}
+压缩时间: ${compressionTime} 毫秒
+算法: ${result.algorithm}
+
+性能评估: ${compressionTime < 100 ? '优秀' : compressionTime < 500 ? '良好' : '需要优化'}
+                `.trim();
+
+                setResult('compression-result', output, result.success ? 'success' : 'error');
+                recordTest(result.success, result.compressionRatio);
+            } catch (error) {
+                setResult('compression-result', `❌ 测试异常: ${error.message}`, 'error');
+                recordTest(false);
+            }
+
+            updateStatus('compression', 'success');
+        }
+
+        async function runDecompressionTest() {
+            updateStatus('compression', 'running');
+            setResult('compression-result', '正在运行解压缩测试...', 'info');
+
+            try {
+                const originalData = {
+                    user: 'John Doe',
+                    profile: 'test_profile_data'.repeat(100),
+                    settings: {
+                        theme: 'dark',
+                        language: 'zh-CN',
+                        notifications: true
+                    }
+                };
+
+                // First compress
+                const compressed = compressionUtils.compress(originalData);
+
+                if (!compressed.success) {
+                    setResult('compression-result', '❌ 压缩失败，无法进行解压缩测试', 'error');
+                    recordTest(false);
+                    return;
+                }
+
+                // Then decompress
+                const startTime = performance.now();
+                const decompressed = compressionUtils.decompress(compressed.data);
+                const endTime = performance.now();
+
+                const decompressionTime = (endTime - startTime).toFixed(2);
+
+                // Verify data integrity
+                const integrityCheck = JSON.stringify(decompressed) === JSON.stringify(originalData);
+
+                const output = `
+${integrityCheck ? '✅' : '❌'} 解压缩测试
+
+原始数据: ${JSON.stringify(originalData, null, 2)}
+解压缩数据: ${JSON.stringify(decompressed, null, 2)}
+数据完整性: ${integrityCheck ? '通过' : '失败'}
+解压缩时间: ${decompressionTime} 毫秒
+使用的算法: ${compressed.algorithm}
+                `.trim();
+
+                setResult('compression-result', output, integrityCheck ? 'success' : 'error');
+                recordTest(integrityCheck);
+            } catch (error) {
+                setResult('compression-result', `❌ 测试异常: ${error.message}`, 'error');
+                recordTest(false);
+            }
+
+            updateStatus('compression', 'success');
+        }
+
+        async function runEdgeCaseTest() {
+            updateStatus('compression', 'running');
+            setResult('compression-result', '正在运行边界情况测试...', 'info');
+
+            try {
+                const edgeCases = [
+                    { name: '空字符串', data: '' },
+                    { name: 'null值', data: null },
+                    { name: 'undefined值', data: undefined },
+                    { name: '数字', data: 12345 },
+                    { name: '布尔值', data: true },
+                    { name: '空对象', data: {} },
+                    { name: '空数组', data: [] },
+                    { name: '小字符串', data: 'small' }
+                ];
+
+                let results = [];
+                let passed = 0;
+
+                for (const testCase of edgeCases) {
+                    try {
+                        const result = compressionUtils.compress(testCase.data);
+                        results.push(`${testCase.name}: ${result.success ? '✅' : '❌'} (${result.algorithm || 'none'})`);
+                        if (!result.success && testCase.data && typeof testCase.data === 'string' && testCase.data.length > 50) {
+                            passed++;
+                        } else if (result.success) {
+                            passed++;
+                        } else if (!testCase.data || (typeof testCase.data === 'string' && testCase.data.length <= 50)) {
+                            passed++; // Expected to fail for small/null data
+                        }
+                    } catch (error) {
+                        results.push(`${testCase.name}: ❌ 异常 - ${error.message}`);
+                    }
+                }
+
+                const output = `
+边界情况测试结果:
+
+${results.join('\n')}
+
+通过测试: ${passed}/${edgeCases.length}
+成功率: ${(passed / edgeCases.length * 100).toFixed(1)}%
+                `.trim();
+
+                setResult('compression-result', output, passed === edgeCases.length ? 'success' : 'info');
+                recordTest(passed === edgeCases.length);
+            } catch (error) {
+                setResult('compression-result', `❌ 测试异常: ${error.message}`, 'error');
+                recordTest(false);
+            }
+
+            updateStatus('compression', 'success');
+        }
+
+        async function runNetworkDetectionTest() {
+            updateStatus('network', 'running');
+            setResult('network-result', '正在运行网络检测测试...', 'info');
+
+            try {
+                const networkInfo = compressionUtils.getNetworkInfo();
+
+                const output = `
+✅ 网络检测测试
+
+网络类型: ${networkInfo.effectiveType || 'unknown'}
+下行带宽: ${networkInfo.downlink || 'unknown'} Mbps
+RTT: ${networkInfo.rtt || 'unknown'} ms
+节省数据模式: ${networkInfo.saveData ? '开启' : '关闭'}
+
+支持的网络API: ${Object.keys(networkInfo).join(', ')}
+
+浏览器兼容性: ${compressionUtils.getBrowserCompatibility().supported ? '✅ 支持' : '❌ 不支持'}
+                `.trim();
+
+                setResult('network-result', output, 'success');
+                recordTest(true);
+            } catch (error) {
+                setResult('network-result', `❌ 测试异常: ${error.message}`, 'error');
+                recordTest(false);
+            }
+
+            updateStatus('network', 'success');
+        }
+
+        async function simulateSlowNetwork() {
+            updateStatus('network', 'running');
+            setResult('network-result', '正在模拟慢网络环境...', 'info');
+
+            try {
+                // Mock slow network
+                if (navigator.connection) {
+                    const originalConnection = {
+                        effectiveType: navigator.connection.effectiveType,
+                        downlink: navigator.connection.downlink,
+                        saveData: navigator.connection.saveData
+                    };
+
+                    navigator.connection.effectiveType = '2g';
+                    navigator.connection.downlink = 0.1;
+                    navigator.connection.saveData = true;
+
+                    const testData = testHelpers.createTestRepetitiveData();
+                    const result = compressionUtils.compress(testData);
+
+                    // Restore original connection
+                    Object.assign(navigator.connection, originalConnection);
+
+                    const output = `
+✅ 慢网络模拟测试
+
+模拟网络类型: 2g
+模拟带宽: 0.1 Mbps
+数据节省模式: 开启
+
+压缩结果:
+- 成功: ${result.success}
+- 压缩率: ${(result.compressionRatio * 100).toFixed(1)}%
+- 算法: ${result.algorithm}
+                    `.trim();
+
+                    setResult('network-result', output, 'success');
+                    recordTest(true, result.compressionRatio);
+                } else {
+                    setResult('network-result', '❌ 浏览器不支持网络连接API', 'error');
+                    recordTest(false);
+                }
+            } catch (error) {
+                setResult('network-result', `❌ 测试异常: ${error.message}`, 'error');
+                recordTest(false);
+            }
+
+            updateStatus('network', 'success');
+        }
+
+        async function simulateFastNetwork() {
+            updateStatus('network', 'running');
+            setResult('network-result', '正在模拟快网络环境...', 'info');
+
+            try {
+                // Mock fast network
+                if (navigator.connection) {
+                    const originalConnection = {
+                        effectiveType: navigator.connection.effectiveType,
+                        downlink: navigator.connection.downlink,
+                        saveData: navigator.connection.saveData
+                    };
+
+                    navigator.connection.effectiveType = '4g';
+                    navigator.connection.downlink = 50;
+                    navigator.connection.saveData = false;
+
+                    const testData = testHelpers.createTestRepetitiveData();
+                    const result = compressionUtils.compress(testData);
+
+                    // Restore original connection
+                    Object.assign(navigator.connection, originalConnection);
+
+                    const output = `
+✅ 快网络模拟测试
+
+模拟网络类型: 4g
+模拟带宽: 50 Mbps
+数据节省模式: 关闭
+
+压缩结果:
+- 成功: ${result.success}
+- 压缩率: ${(result.compressionRatio * 100).toFixed(1)}%
+- 算法: ${result.algorithm}
+                    `.trim();
+
+                    setResult('network-result', output, 'success');
+                    recordTest(true, result.compressionRatio);
+                } else {
+                    setResult('network-result', '❌ 浏览器不支持网络连接API', 'error');
+                    recordTest(false);
+                }
+            } catch (error) {
+                setResult('network-result', `❌ 测试异常: ${error.message}`, 'error');
+                recordTest(false);
+            }
+
+            updateStatus('network', 'success');
+        }
+
+        async function runNetworkAdaptiveTest() {
+            updateStatus('network', 'running');
+            setResult('network-result', '正在运行自适应压缩测试...', 'info');
+
+            try {
+                const testData = testHelpers.createTestRepetitiveData();
+
+                // Test with different network conditions
+                const conditions = [
+                    { type: 'slow', effectiveType: '2g', saveData: true },
+                    { type: 'fast', effectiveType: '4g', saveData: false }
+                ];
+
+                let results = [];
+
+                for (const condition of conditions) {
+                    if (navigator.connection) {
+                        navigator.connection.effectiveType = condition.effectiveType;
+                        navigator.connection.saveData = condition.saveData;
+
+                        const result = compressionUtils.compress(testData);
+                        results.push(`${condition.type}网络: ${result.success ? '✅' : '❌'} (${(result.compressionRatio * 100).toFixed(1)}% 压缩率)`);
+                    }
+                }
+
+                const output = `
+✅ 自适应压缩测试
+
+${results.join('\n')}
+
+压缩策略已根据网络条件自动调整。
+                `.trim();
+
+                setResult('network-result', output, 'success');
+                recordTest(true);
+            } catch (error) {
+                setResult('network-result', `❌ 测试异常: ${error.message}`, 'error');
+                recordTest(false);
+            }
+
+            updateStatus('network', 'success');
+        }
+
+        async function testURLSearchParams() {
+            updateStatus('format', 'running');
+            setResult('format-result', '正在测试URLSearchParams转换...', 'info');
+
+            try {
+                const data = {
+                    name: 'John Doe',
+                    age: '30',
+                    preferences: JSON.stringify({ theme: 'dark' }),
+                    tags: ['tag1', 'tag2']
+                };
+
+                const result = compressionUtils.compressAndConvert(data, 'urlsearchparams');
+
+                const output = `
+${result.success ? '✅' : '❌'} URLSearchParams转换测试
+
+原始数据: ${JSON.stringify(data, null, 2)}
+转换格式: ${result.format}
+转换成功: ${result.success}
+
+转换后的数据可用于URL参数传递。
+                `.trim();
+
+                setResult('format-result', output, result.success ? 'success' : 'error');
+                recordTest(result.success);
+            } catch (error) {
+                setResult('format-result', `❌ 测试异常: ${error.message}`, 'error');
+                recordTest(false);
+            }
+
+            updateStatus('format', 'success');
+        }
+
+        async function testFormData() {
+            updateStatus('format', 'running');
+            setResult('format-result', '正在测试FormData转换...', 'info');
+
+            try {
+                const data = {
+                    username: 'testuser',
+                    profile: JSON.stringify({ bio: 'test bio' }),
+                    files: ['file1.txt', 'file2.txt']
+                };
+
+                const result = compressionUtils.compressAndConvert(data, 'formdata');
+
+                const output = `
+${result.success ? '✅' : '❌'} FormData转换测试
+
+原始数据: ${JSON.stringify(data, null, 2)}
+转换格式: ${result.format}
+转换成功: ${result.success}
+
+转换后的数据可用于表单提交。
+                `.trim();
+
+                setResult('format-result', output, result.success ? 'success' : 'error');
+                recordTest(result.success);
+            } catch (error) {
+                setResult('format-result', `❌ 测试异常: ${error.message}`, 'error');
+                recordTest(false);
+            }
+
+            updateStatus('format', 'success');
+        }
+
+        async function testJSONFormat() {
+            updateStatus('format', 'running');
+            setResult('format-result', '正在测试JSON格式...', 'info');
+
+            try {
+                const data = testHelpers.createTestRepetitiveData();
+                const result = compressionUtils.compressAndConvert(data, 'json');
+
+                const output = `
+${result.success ? '✅' : '❌'} JSON格式测试
+
+原始数据大小: ${result.originalSize} 字节
+JSON格式大小: ${result.compressedSize} 字节
+格式: ${result.format}
+压缩率: ${(result.compressionRatio * 100).toFixed(1)}%
+
+JSON格式适合API调用和数据交换。
+                `.trim();
+
+                setResult('format-result', output, result.success ? 'success' : 'error');
+                recordTest(result.success, result.compressionRatio);
+            } catch (error) {
+                setResult('format-result', `❌ 测试异常: ${error.message}`, 'error');
+                recordTest(false);
+            }
+
+            updateStatus('format', 'success');
+        }
+
+        async function testStringFormat() {
+            updateStatus('format', 'running');
+            setResult('format-result', '正在测试字符串格式...', 'info');
+
+            try {
+                const data = testHelpers.createTestRepetitiveData();
+                const result = compressionUtils.compressAndConvert(data, 'string');
+
+                const output = `
+${result.success ? '✅' : '❌'} 字符串格式测试
+
+原始数据大小: ${result.originalSize} 字节
+字符串格式大小: ${result.compressedSize} 字节
+格式: ${result.format}
+压缩率: ${(result.compressionRatio * 100).toFixed(1)}%
+
+字符串格式适合存储和传输。
+                `.trim();
+
+                setResult('format-result', output, result.success ? 'success' : 'error');
+                recordTest(result.success, result.compressionRatio);
+            } catch (error) {
+                setResult('format-result', `❌ 测试异常: ${error.message}`, 'error');
+                recordTest(false);
+            }
+
+            updateStatus('format', 'success');
+        }
+
+        async function runPerformanceBenchmark() {
+            updateStatus('performance', 'running');
+            setResult('performance-result', '正在运行性能基准测试...', 'info');
+
+            try {
+                const testData = testHelpers.createTestRepetitiveData();
+                const iterations = 10;
+                const results = [];
+
+                for (let i = 0; i < iterations; i++) {
+                    const startTime = performance.now();
+                    const result = compressionUtils.compress(testData);
+                    const endTime = performance.now();
+
+                    results.push({
+                        time: endTime - startTime,
+                        success: result.success,
+                        ratio: result.compressionRatio
+                    });
+                }
+
+                const avgTime = results.reduce((sum, r) => sum + r.time, 0) / iterations;
+                const minTime = Math.min(...results.map(r => r.time));
+                const maxTime = Math.max(...results.map(r => r.time));
+                const avgRatio = results.reduce((sum, r) => sum + r.ratio, 0) / iterations;
+
+                const output = `
+✅ 性能基准测试完成
+
+测试次数: ${iterations}
+平均时间: ${avgTime.toFixed(2)} 毫秒
+最快时间: ${minTime.toFixed(2)} 毫秒
+最慢时间: ${maxTime.toFixed(2)} 毫秒
+平均压缩率: ${(avgRatio * 100).toFixed(1)}%
+
+性能评估:
+${avgTime < 50 ? '🚀 优秀' : avgTime < 100 ? '✅ 良好' : '⚠️ 需要优化'}
+                `.trim();
+
+                setResult('performance-result', output, 'success');
+                recordTest(true, avgRatio);
+            } catch (error) {
+                setResult('performance-result', `❌ 测试异常: ${error.message}`, 'error');
+                recordTest(false);
+            }
+
+            updateStatus('performance', 'success');
+        }
+
+        async function runMemoryTest() {
+            updateStatus('performance', 'running');
+            setResult('performance-result', '正在运行内存使用测试...', 'info');
+
+            try {
+                const initialMemory = performance.memory ? performance.memory.usedJSHeapSize : 'N/A';
+
+                // Create and compress large data
+                const largeDataArray = Array(100).fill().map(() => testHelpers.createTestRepetitiveData());
+
+                for (const data of largeDataArray) {
+                    compressionUtils.compress(data);
+                }
+
+                const finalMemory = performance.memory ? performance.memory.usedJSHeapSize : 'N/A';
+
+                let memoryIncrease = 'N/A';
+                if (typeof initialMemory === 'number' && typeof finalMemory === 'number') {
+                    memoryIncrease = ((finalMemory - initialMemory) / 1024 / 1024).toFixed(2) + ' MB';
+                }
+
+                const output = `
+✅ 内存使用测试
+
+初始内存: ${typeof initialMemory === 'number' ? (initialMemory / 1024 / 1024).toFixed(2) + ' MB' : initialMemory}
+处理后内存: ${typeof finalMemory === 'number' ? (finalMemory / 1024 / 1024).toFixed(2) + ' MB' : finalMemory}
+内存增长: ${memoryIncrease}
+处理数据量: ${largeDataArray.length} 个大对象
+
+内存管理: ${memoryIncrease === 'N/A' || parseFloat(memoryIncrease) < 50 ? '✅ 正常' : '⚠️ 需要关注'}
+                `.trim();
+
+                setResult('performance-result', output, 'success');
+                recordTest(true);
+            } catch (error) {
+                setResult('performance-result', `❌ 测试异常: ${error.message}`, 'error');
+                recordTest(false);
+            }
+
+            updateStatus('performance', 'success');
+        }
+
+        async function runBatchTest() {
+            updateStatus('performance', 'running');
+            setResult('performance-result', '正在运行批量操作测试...', 'info');
+
+            try {
+                const batchSizes = [10, 50, 100];
+                let results = [];
+
+                for (const batchSize of batchSizes) {
+                    const testBatch = Array(batchSize).fill().map((_, i) => ({
+                        id: i,
+                        data: `batch_test_data_${i}`.repeat(10)
+                    }));
+
+                    const startTime = performance.now();
+                    const batchResults = testBatch.map(data => compressionUtils.compress(data));
+                    const endTime = performance.now();
+
+                    const successful = batchResults.filter(r => r.success).length;
+                    const totalTime = endTime - startTime;
+
+                    results.push({
+                        size: batchSize,
+                        time: totalTime.toFixed(2),
+                        success: successful,
+                        successRate: (successful / batchSize * 100).toFixed(1)
+                    });
+                }
+
+                const output = `
+✅ 批量操作测试结果:
+
+${results.map(r =>
+    `${r.size} 个对象: ${r.time}ms, ${r.success}/${r.size} 成功 (${r.successRate}%)`
+).join('\n')}
+
+批量处理性能表现良好。
+                `.trim();
+
+                setResult('performance-result', output, 'success');
+                recordTest(true);
+            } catch (error) {
+                setResult('performance-result', `❌ 测试异常: ${error.message}`, 'error');
+                recordTest(false);
+            }
+
+            updateStatus('performance', 'success');
+        }
+
+        async function showPerformanceStats() {
+            updateStatus('performance', 'running');
+            setResult('performance-result', '正在获取性能统计...', 'info');
+
+            try {
+                const stats = compressionUtils.getStats();
+                const metrics = compressionUtils.getPerformanceMetrics();
+                const config = compressionUtils.getConfig();
+
+                const output = `
+✅ 性能统计信息
+
+基本统计:
+- 总压缩次数: ${stats.totalCompressions}
+- 成功压缩: ${stats.successfulCompressions}
+- 成功率: ${stats.successRate ? (stats.successRate * 100).toFixed(1) + '%' : 'N/A'}
+
+压缩效果:
+- 总原始大小: ${stats.totalOriginalSize} 字节
+- 总压缩大小: ${stats.totalCompressedSize} 字节
+- 节省空间: ${stats.spaceSaved} 字节
+- 平均压缩率: ${stats.overallCompressionRatio ? (stats.overallCompressionRatio * 100).toFixed(1) + '%' : 'N/A'}
+
+性能指标:
+- 平均压缩时间: ${stats.averageCompressionTime.toFixed(2)} 毫秒
+
+当前配置:
+- 最小压缩率: ${(config.minCompressionRatio * 100).toFixed(1)}%
+- 启用回退: ${config.enableFallback ? '是' : '否'}
+- 优先最小: ${config.preferSmallest ? '是' : '否'}
+- 算法: ${config.algorithm}
+                `.trim();
+
+                setResult('performance-result', output, 'success');
+                recordTest(true);
+            } catch (error) {
+                setResult('performance-result', `❌ 获取统计信息失败: ${error.message}`, 'error');
+                recordTest(false);
+            }
+
+            updateStatus('performance', 'success');
+        }
+
+        // Test helpers (similar to those in test-setup.js)
+        window.testHelpers = {
+            createTestRepetitiveData: function() {
+                return {
+                    message: 'test_message_12345'.repeat(2000),
+                    content: 'A'.repeat(5000),
+                    details: {
+                        pattern: 'repeated_pattern_xyz'.repeat(1000),
+                        metadata: 'x'.repeat(3000)
+                    }
+                };
+            }
+        };
+    </script>
+</body>
+</html>

@@ -53,9 +53,10 @@ export default class CompressionManager {
   /**
    * Compress data using configured algorithm
    * @param {any} data - Data to compress
+   * @param {boolean} forceCompression - Force compression regardless of compression ratio
    * @returns {CompressionResult} - Compression result
    */
-  compress(data) {
+  compress(data, forceCompression = false) {
     const startTime = performance.now();
     const originalData = this.serializeData(data);
     const originalSize = this.getDataSize(originalData);
@@ -64,8 +65,8 @@ export default class CompressionManager {
       this.compressionStats.totalCompressions++;
       this.compressionStats.totalOriginalSize += originalSize;
 
-      // Check if data is too small to be worth compressing
-      if (originalSize < 50) {
+      // Check if data is too small to be worth compressing (unless forced)
+      if (originalSize < 50 && !forceCompression) {
         return this.createResult(
           false,
           originalData,
@@ -85,7 +86,21 @@ export default class CompressionManager {
       // Use adapter if available
       if (this.compressionAdapter) {
         try {
-          compressedData = this.compressionAdapter.compress(originalData);
+          const compressionResult =
+            this.compressionAdapter.compress(originalData);
+
+          // Handle both synchronous and asynchronous compression adapters
+          if (
+            compressionResult &&
+            typeof compressionResult.then === 'function'
+          ) {
+            // It's a Promise, but we're in sync context - this shouldn't happen in tests
+            throw new Error(
+              'Async compression adapter not supported in synchronous context'
+            );
+          }
+
+          compressedData = compressionResult;
           algorithm = this.compressionAdapter.getAlgorithmName();
         } catch (error) {
           if (this.config.enableFallback) {
@@ -109,8 +124,26 @@ export default class CompressionManager {
         }
       }
 
+      // Ensure compressedData is never undefined
+      if (compressedData === undefined || compressedData === null) {
+        compressedData = originalData;
+        algorithm = COMPRESSION_ALGORITHMS.NONE;
+      }
+
       const compressedSize = this.getDataSize(compressedData);
-      const compressionTime = performance.now() - startTime;
+
+      // Handle cases where performance.now() might not work properly (test environments)
+      let compressionTime;
+      try {
+        const endTime = performance.now();
+        compressionTime = endTime - startTime;
+        if (!isFinite(compressionTime) || compressionTime < 0) {
+          compressionTime = 0; // Fallback for test environments
+        }
+      } catch (e) {
+        compressionTime = 0; // Fallback for environments without performance.now
+      }
+
       const compressionRatio = 1 - compressedSize / originalSize;
 
       // Check if compression is beneficial
@@ -123,7 +156,11 @@ export default class CompressionManager {
       let finalSize = compressedSize;
       let success = true;
 
-      if (!isCompressedSmaller || !meetsCompressionRatio) {
+      // Skip compression ratio checks if force compression is enabled
+      if (
+        !forceCompression &&
+        (!isCompressedSmaller || !meetsCompressionRatio)
+      ) {
         if (this.config.preferSmallest || !meetsCompressionRatio) {
           // Use original data if it's smaller or compression isn't significant
           finalData = originalData;

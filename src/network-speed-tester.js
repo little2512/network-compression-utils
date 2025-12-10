@@ -29,7 +29,7 @@ class NetworkSpeedTester {
       minTestTime: options.minTestTime || 100, // 100ms minimum
       concurrentTests: options.concurrentTests || 3,
       timeout: options.timeout || 10000, // 10 seconds timeout
-      ...options
+      ...options,
     };
 
     this.performanceAnalyzer = new PerformanceAnalyzer();
@@ -71,7 +71,7 @@ class NetworkSpeedTester {
         packetLoss: speedResult.packetLoss || 0,
         testDuration,
         quality,
-        timestamp: Date.now()
+        timestamp: Date.now(),
       };
 
       // Store result and add to performance analyzer
@@ -80,7 +80,7 @@ class NetworkSpeedTester {
         speedKbps: result.speedKbps,
         timestamp: result.timestamp,
         dataSize: testOptions.testSize,
-        duration: testDuration
+        duration: testDuration,
       });
 
       // Keep only last 50 tests
@@ -89,7 +89,6 @@ class NetworkSpeedTester {
       }
 
       return result;
-
     } finally {
       this.isRunning = false;
     }
@@ -111,7 +110,7 @@ class NetworkSpeedTester {
         await this.makeSpeedTestRequest({
           ...options,
           size: 64, // Very small request for latency
-          method: 'HEAD'
+          method: 'HEAD',
         });
 
         const latency = performance.now() - startTime;
@@ -146,7 +145,6 @@ class NetworkSpeedTester {
    */
   async measureDownloadSpeed(options = {}) {
     const concurrentTests = options.concurrentTests || 3;
-    const testSize = options.testSize || 1024;
 
     const promises = [];
     const startTime = performance.now();
@@ -163,35 +161,36 @@ class NetworkSpeedTester {
 
       // Process results
       const successfulTests = results
-        .filter(r => r.status === 'fulfilled')
-        .map(r => r.value);
+        .filter((r) => r.status === 'fulfilled')
+        .map((r) => r.value);
 
       if (successfulTests.length === 0) {
         throw new Error('All speed tests failed');
       }
 
       // Calculate average speed and jitter
-      const speeds = successfulTests.map(r => r.speedKbps);
-      const avgSpeed = speeds.reduce((sum, speed) => sum + speed, 0) / speeds.length;
+      const speeds = successfulTests.map((r) => r.speedKbps);
+      const avgSpeed =
+        speeds.reduce((sum, speed) => sum + speed, 0) / speeds.length;
 
       const jitter = this.calculateJitter(speeds);
 
       // Estimate packet loss based on failed tests
-      const packetLoss = ((concurrentTests - successfulTests.length) / concurrentTests) * 100;
+      const packetLoss =
+        ((concurrentTests - successfulTests.length) / concurrentTests) * 100;
 
       return {
         speedKbps: avgSpeed,
         jitter,
         packetLoss,
         testDuration,
-        sampleCount: successfulTests.length
+        sampleCount: successfulTests.length,
       };
-
     } catch (error) {
       // Fallback: try a single simple test
       return await this.measureSingleDownloadSpeed({
         ...options,
-        fallback: true
+        fallback: true,
       });
     }
   }
@@ -206,19 +205,18 @@ class NetworkSpeedTester {
     const startTime = performance.now();
 
     try {
-      const response = await this.makeSpeedTestRequest(options);
+      await this.makeSpeedTestRequest(options);
       const duration = performance.now() - startTime;
 
       // Calculate speed based on actual data transferred
-      const speedKbps = (testSize * 8) / (duration); // bits/ms = Kbps
+      const speedKbps = (testSize * 8) / duration; // bits/ms = Kbps
 
       return {
         speedKbps,
         duration,
         dataSize: testSize,
-        success: true
+        success: true,
       };
-
     } catch (error) {
       if (options.fallback) {
         // Return very slow speed for fallback
@@ -226,7 +224,7 @@ class NetworkSpeedTester {
           speedKbps: 1, // 1 Kbps - extremely slow
           duration: this.options.maxTestTime,
           dataSize: testSize,
-          success: false
+          success: false,
         };
       }
       throw error;
@@ -243,7 +241,7 @@ class NetworkSpeedTester {
       testUrl = this.options.testUrl,
       size = this.options.testSize,
       method = 'GET',
-      timeout = this.options.timeout
+      timeout = this.options.timeout,
     } = options;
 
     // Create test data URL with size parameter
@@ -258,8 +256,8 @@ class NetworkSpeedTester {
         signal: controller.signal,
         headers: {
           'Cache-Control': 'no-cache',
-          'Pragma': 'no-cache'
-        }
+          Pragma: 'no-cache',
+        },
       });
 
       clearTimeout(timeoutId);
@@ -271,13 +269,14 @@ class NetworkSpeedTester {
       // For GET requests, actually read the response to measure transfer
       if (method === 'GET') {
         const reader = response.body.getReader();
-        let receivedBytes = 0;
 
         try {
-          while (true) {
-            const { done, value } = await reader.read();
-            if (done) break;
-            receivedBytes += value.length;
+          let reading = true;
+          while (reading) {
+            const { done } = await reader.read();
+            if (done) {
+              reading = false;
+            }
           }
         } catch (error) {
           // If reading fails, continue with response
@@ -286,7 +285,6 @@ class NetworkSpeedTester {
       }
 
       return response;
-
     } catch (error) {
       clearTimeout(timeoutId);
 
@@ -307,7 +305,9 @@ class NetworkSpeedTester {
     if (speeds.length < 2) return 0;
 
     const avg = speeds.reduce((sum, speed) => sum + speed, 0) / speeds.length;
-    const variance = speeds.reduce((sum, speed) => sum + Math.pow(speed - avg, 2), 0) / speeds.length;
+    const variance =
+      speeds.reduce((sum, speed) => sum + Math.pow(speed - avg, 2), 0) /
+      speeds.length;
 
     return Math.sqrt(variance);
   }
@@ -325,23 +325,33 @@ class NetworkSpeedTester {
     let qualityScore = 100;
 
     // Speed factor (40% weight)
-    if (speedKbps > 5000) qualityScore -= 0;      // Excellent
-    else if (speedKbps > 2000) qualityScore -= 10; // Good
-    else if (speedKbps > 1000) qualityScore -= 20; // Fair
-    else if (speedKbps > 100) qualityScore -= 40;  // Poor
-    else qualityScore -= 60;                        // Very poor
+    if (speedKbps > 5000)
+      qualityScore -= 0; // Excellent
+    else if (speedKbps > 2000)
+      qualityScore -= 10; // Good
+    else if (speedKbps > 1000)
+      qualityScore -= 20; // Fair
+    else if (speedKbps > 100)
+      qualityScore -= 40; // Poor
+    else qualityScore -= 60; // Very poor
 
     // Latency factor (30% weight)
-    if (latency > 1000) qualityScore -= 30;       // Very high latency
-    else if (latency > 500) qualityScore -= 20;   // High latency
-    else if (latency > 200) qualityScore -= 10;   // Medium latency
-    else qualityScore -= 0;                       // Low latency
+    if (latency > 1000)
+      qualityScore -= 30; // Very high latency
+    else if (latency > 500)
+      qualityScore -= 20; // High latency
+    else if (latency > 200)
+      qualityScore -= 10; // Medium latency
+    else qualityScore -= 0; // Low latency
 
     // Packet loss factor (30% weight)
-    if (packetLoss > 10) qualityScore -= 30;      // High packet loss
-    else if (packetLoss > 5) qualityScore -= 20;  // Medium packet loss
-    else if (packetLoss > 1) qualityScore -= 10;  // Low packet loss
-    else qualityScore -= 0;                       // No packet loss
+    if (packetLoss > 10)
+      qualityScore -= 30; // High packet loss
+    else if (packetLoss > 5)
+      qualityScore -= 20; // Medium packet loss
+    else if (packetLoss > 1)
+      qualityScore -= 10; // Low packet loss
+    else qualityScore -= 0; // No packet loss
 
     // Determine quality category
     if (qualityScore >= 80) return 'excellent';
@@ -359,13 +369,13 @@ class NetworkSpeedTester {
     if (this.testHistory.length === 0) {
       return {
         hasData: false,
-        message: 'No speed tests performed yet'
+        message: 'No speed tests performed yet',
       };
     }
 
     const recentTests = this.testHistory.slice(-10); // Last 10 tests
-    const speeds = recentTests.map(t => t.speedKbps);
-    const latencies = recentTests.map(t => t.latency);
+    const speeds = recentTests.map((t) => t.speedKbps);
+    const latencies = recentTests.map((t) => t.latency);
 
     return {
       hasData: true,
@@ -373,12 +383,14 @@ class NetworkSpeedTester {
       recentTests: recentTests.length,
 
       // Speed statistics
-      averageSpeed: speeds.reduce((sum, speed) => sum + speed, 0) / speeds.length,
+      averageSpeed:
+        speeds.reduce((sum, speed) => sum + speed, 0) / speeds.length,
       maxSpeed: Math.max(...speeds),
       minSpeed: Math.min(...speeds),
 
       // Latency statistics
-      averageLatency: latencies.reduce((sum, latency) => sum + latency, 0) / latencies.length,
+      averageLatency:
+        latencies.reduce((sum, latency) => sum + latency, 0) / latencies.length,
       maxLatency: Math.max(...latencies),
       minLatency: Math.min(...latencies),
 
@@ -388,7 +400,7 @@ class NetworkSpeedTester {
       // Performance analyzer status
       performanceStatus: this.performanceAnalyzer.getPerformanceStatus(),
 
-      lastTest: this.testHistory[this.testHistory.length - 1]
+      lastTest: this.testHistory[this.testHistory.length - 1],
     };
   }
 
@@ -421,7 +433,7 @@ class NetworkSpeedTester {
    * @returns {Promise} Delay promise
    */
   delay(ms) {
-    return new Promise(resolve => setTimeout(resolve, ms));
+    return new Promise((resolve) => setTimeout(resolve, ms));
   }
 }
 

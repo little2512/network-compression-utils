@@ -4,8 +4,6 @@
  * Focused on JSON/Objects to URL parameters conversion using qs library
  */
 
-import qs from 'qs';
-
 /**
  * Format conversion result
  * @typedef {Object} FormatResult
@@ -156,7 +154,7 @@ export default class FormatConverter {
       if (value instanceof File || value instanceof Blob) {
         formData.append(key, value);
       } else if (Array.isArray(value)) {
-        value.forEach((item, index) => {
+        value.forEach((item) => {
           formData.append(key, String(item));
         });
       } else {

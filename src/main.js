@@ -76,7 +76,7 @@ export default class NetworkCompressionUtils {
     this.performanceAnalyzer = new PerformanceAnalyzer(config);
     this.networkSpeedTester = new NetworkSpeedTester({
       testUrl: config.speedTestUrl || '/api/network-speed-test',
-      testSize: config.speedTestSize || 1024
+      testSize: config.speedTestSize || 1024,
     });
 
     this.setupNetworkListener();
@@ -135,7 +135,7 @@ export default class NetworkCompressionUtils {
     const interval = config.speedTestInterval || 30000; // 30 seconds default
 
     // Perform initial speed test
-    this.performSpeedTest().catch(error => {
+    this.performSpeedTest().catch((error) => {
       if (this.configManager.config.enableLogging) {
         console.warn('Initial speed test failed:', error.message);
       }
@@ -143,7 +143,7 @@ export default class NetworkCompressionUtils {
 
     // Set up periodic testing
     setInterval(() => {
-      this.performSpeedTest().catch(error => {
+      this.performSpeedTest().catch((error) => {
         // Silently fail periodic tests to avoid console spam
         if (this.configManager.config.enableLogging) {
           console.warn('Periodic speed test failed:', error.message);
@@ -165,7 +165,7 @@ export default class NetworkCompressionUtils {
         console.log('Speed test completed:', {
           speedKbps: result.speedKbps.toFixed(2),
           latency: result.latency.toFixed(2) + 'ms',
-          quality: result.quality
+          quality: result.quality,
         });
       }
 
@@ -234,7 +234,10 @@ export default class NetworkCompressionUtils {
 
       if (shouldCompress) {
         // Apply compression
-        compressionResult = this.compressionManager.compress(options.data);
+        compressionResult = this.compressionManager.compress(
+          options.data,
+          options.forceCompression
+        );
 
         if (compressionResult.success) {
           finalData = compressionResult.data;
@@ -247,6 +250,8 @@ export default class NetworkCompressionUtils {
           if (this.configManager.getConfig().enableLogging) {
             console.warn('Compression failed:', compressionResult.error);
           }
+          // Ensure finalData is properly set to original data when compression fails
+          finalData = options.data;
         }
       }
 
@@ -254,23 +259,38 @@ export default class NetworkCompressionUtils {
       let finalOutputData;
 
       if (shouldCompress && compressionResult?.success) {
-        // If compressed, data is already a string
-        finalOutputData = finalData;
+        // If compressed, data should already be a string from the compression manager
+        // Ensure it's converted to string if it's not already
+        finalOutputData =
+          typeof finalData === 'string' ? finalData : String(finalData);
       } else {
         // If not compressed, convert to URL parameter string using qs
-        const processedData = typeof finalData === 'string'
-          ? JSON.parse(finalData)
-          : finalData;
+        let processedData = finalData;
+
+        // If finalData is a string, try to parse as JSON, otherwise use as-is
+        if (typeof finalData === 'string') {
+          try {
+            processedData = JSON.parse(finalData);
+          } catch (parseError) {
+            // If it's not valid JSON, use the string directly
+            processedData = finalData;
+          }
+        }
 
         try {
           finalOutputData = qs.stringify(processedData, {
             arrayFormat: 'brackets',
             allowDots: true,
-            encode: true
+            encode: true,
           });
         } catch (error) {
           // Fallback to JSON.stringify if qs fails
-          finalOutputData = JSON.stringify(processedData);
+          try {
+            finalOutputData = JSON.stringify(processedData);
+          } catch (stringifyError) {
+            // If both fail, convert to string directly
+            finalOutputData = String(processedData);
+          }
         }
       }
 
@@ -319,15 +339,22 @@ export default class NetworkCompressionUtils {
     // Use performance-based compression decision if available
     const config = this.configManager.config.performanceOptimization;
     if (config?.enabled && this.performanceAnalyzer) {
-      const performanceResult = this.performanceAnalyzer.analyzeCompressionDecision(
-        dataSize,
-        networkType,
-        { forceCompression }
-      );
+      const performanceResult =
+        this.performanceAnalyzer.analyzeCompressionDecision(
+          dataSize,
+          networkType,
+          { forceCompression }
+        );
 
       // Log performance-based decision if logging is enabled
-      if (this.configManager.getConfig().enableLogging && performanceResult.recommendation) {
-        console.log('Performance-based compression decision:', performanceResult.recommendation);
+      if (
+        this.configManager.getConfig().enableLogging &&
+        performanceResult.recommendation
+      ) {
+        console.log(
+          'Performance-based compression decision:',
+          performanceResult.recommendation
+        );
       }
 
       return performanceResult.shouldCompress;
@@ -604,30 +631,44 @@ export default class NetworkCompressionUtils {
    * @returns {Object} - Performance analysis result
    */
   getPerformanceAnalysis(dataSize, networkType = null) {
-    const actualNetworkType = networkType || this.networkDetector.getNetworkInfo()?.effectiveType || '4g';
+    const actualNetworkType =
+      networkType ||
+      this.networkDetector.getNetworkInfo()?.effectiveType ||
+      '4g';
 
     if (this.performanceAnalyzer) {
-      return this.performanceAnalyzer.analyzeCompressionDecision(dataSize, actualNetworkType);
+      return this.performanceAnalyzer.analyzeCompressionDecision(
+        dataSize,
+        actualNetworkType
+      );
     }
 
     // Fallback analysis without performance data
-    const threshold = this.configManager.getThresholdForNetwork(actualNetworkType);
-    const estimatedSpeed = this.performanceAnalyzer?.networkSpeedEstimates[actualNetworkType] || 10000;
-    const estimatedTime = this.performanceAnalyzer?.calculateTransmissionTime?.(dataSize, estimatedSpeed) || (dataSize * 8) / (estimatedSpeed * 1000);
+    const threshold =
+      this.configManager.getThresholdForNetwork(actualNetworkType);
+    const estimatedSpeed =
+      this.performanceAnalyzer?.networkSpeedEstimates[actualNetworkType] ||
+      10000;
+    const estimatedTime =
+      this.performanceAnalyzer?.calculateTransmissionTime?.(
+        dataSize,
+        estimatedSpeed
+      ) || (dataSize * 8) / (estimatedSpeed * 1000);
 
     return {
       shouldCompress: dataSize > threshold,
       estimatedTransmissionTime: estimatedTime,
-      compressionBenefit: Math.max(0, estimatedTime - (estimatedTime * 0.5)), // Assume 50% compression
-      recommendation: dataSize > threshold
-        ? `Data size (${dataSize} bytes) exceeds ${actualNetworkType} threshold (${threshold} bytes). Compression recommended.`
-        : `Data size (${dataSize} bytes) within ${actualNetworkType} threshold (${threshold} bytes). No compression needed.`,
+      compressionBenefit: Math.max(0, estimatedTime - estimatedTime * 0.5), // Assume 50% compression
+      recommendation:
+        dataSize > threshold
+          ? `Data size (${dataSize} bytes) exceeds ${actualNetworkType} threshold (${threshold} bytes). Compression recommended.`
+          : `Data size (${dataSize} bytes) within ${actualNetworkType} threshold (${threshold} bytes). No compression needed.`,
       metrics: {
         dataSize,
         threshold,
         networkType: actualNetworkType,
-        usePerformanceOptimization: false
-      }
+        usePerformanceOptimization: false,
+      },
     };
   }
 
@@ -639,7 +680,7 @@ export default class NetworkCompressionUtils {
     if (!this.performanceAnalyzer) {
       return {
         hasPerformanceData: false,
-        message: 'Performance analyzer not available'
+        message: 'Performance analyzer not available',
       };
     }
 
@@ -654,7 +695,7 @@ export default class NetworkCompressionUtils {
       lastSpeedTest: performanceStatus.lastSpeedTest,
       performanceThreshold: performanceStatus.performanceThreshold,
       speedTestSummary,
-      networkInfo: this.networkDetector.getNetworkInfo()
+      networkInfo: this.networkDetector.getNetworkInfo(),
     };
   }
 
@@ -670,13 +711,13 @@ export default class NetworkCompressionUtils {
       return {
         success: true,
         speedTestResult: result,
-        performanceStatus: this.getNetworkPerformanceStatus()
+        performanceStatus: this.getNetworkPerformanceStatus(),
       };
     } catch (error) {
       return {
         success: false,
         error: error.message,
-        performanceStatus: this.getNetworkPerformanceStatus()
+        performanceStatus: this.getNetworkPerformanceStatus(),
       };
     }
   }

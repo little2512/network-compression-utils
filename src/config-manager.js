@@ -188,9 +188,7 @@ export default class ConfigManager {
    */
   updateConfig(newConfig) {
     try {
-      const newValidationErrors = [];
       const oldConfig = { ...this.config };
-      const oldValidationErrors = [...this.validationErrors];
 
       // Create temporary merged config for validation
       const tempConfig = this.mergeWithDefaults(newConfig);
@@ -275,7 +273,7 @@ export default class ConfigManager {
    * @param {any} data - Data to be processed
    * @returns {string} - Best format to use
    */
-  getOptimalFormat(requestedFormat, data = null) {
+  getOptimalFormat(requestedFormat) {
     // Use requested format if valid
     if (VALID_FORMATS.includes(requestedFormat)) {
       return requestedFormat;

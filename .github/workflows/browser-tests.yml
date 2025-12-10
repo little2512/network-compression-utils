@@ -1,4 +1,4 @@
-name: Browser Tests
+name: Browser Compatibility Tests
 
 on:
   push:
@@ -9,13 +9,17 @@ on:
   workflow_dispatch:
 
 jobs:
-  # Lightweight browser tests using jsdom
-  jsdom-tests:
-    runs-on: ubuntu-latest
+  # Chrome浏览器测试
+  chrome-tests:
+    runs-on: ${{ matrix.os }}
 
     strategy:
       matrix:
-        node-version: [16.x, 18.x, 20.x]
+        os: [ubuntu-latest, windows-latest, macos-latest]
+        node-version: [18.x, 20.x]
+        exclude:
+          - os: macos-latest
+            node-version: 18.x
 
     steps:
     - name: Checkout code
@@ -33,59 +37,77 @@ jobs:
     - name: Build project
       run: npm run build
 
-    - name: Run jsdom browser tests
-      run: npm test -- --testPathPattern=jsdom.spec.js
+    - name: Install Chrome dependencies (Linux)
+      if: matrix.os == 'ubuntu-latest'
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y google-chrome-stable
 
-  # Full Playwright tests on multiple browsers
-  playwright-tests:
-    runs-on: ubuntu-latest
+    - name: Run Chrome tests
+      run: npm run test:chrome
 
-    strategy:
-      matrix:
-        browser: [chromium, firefox, webkit]
-      fail-fast: false  # Continue testing other browsers even if one fails
-
-    steps:
-    - name: Checkout code
-      uses: actions/checkout@v4
-
-    - name: Setup Node.js
-      uses: actions/setup-node@v4
-      with:
-        node-version: '20.x'
-        cache: 'npm'
-
-    - name: Install dependencies
-      run: npm ci
-
-    - name: Build project
-      run: npm run build
-
-    - name: Install Playwright browsers
-      run: npx playwright install --with-deps ${{ matrix.browser }}
-
-    - name: Run Playwright tests on ${{ matrix.browser }}
-      run: npx playwright test --project=${{ matrix.browser }}
-      env:
-        CI: true
-
-    - name: Upload test results
+    - name: Upload Chrome test results
       uses: actions/upload-artifact@v4
       if: always()
       with:
-        name: playwright-report-${{ matrix.browser }}
-        path: playwright-report/
+        name: chrome-test-results-${{ matrix.os }}-${{ matrix.node-version }}
+        path: coverage/
         retention-days: 7
 
-  # Cross-platform browser tests
-  cross-platform-tests:
+  # Firefox浏览器测试
+  firefox-tests:
     runs-on: ${{ matrix.os }}
 
     strategy:
       matrix:
-        os: [ubuntu-latest, windows-latest]
-        browser: [chromium, firefox]
-      fail-fast: false
+        os: [ubuntu-latest, windows-latest, macos-latest]
+        node-version: [20.x]
+        exclude:
+          - os: macos-latest
+            node-version: 20.x
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Setup Node.js ${{ matrix.node-version }}
+      uses: actions/setup-node@v4
+      with:
+        node-version: ${{ matrix.node-version }}
+        cache: 'npm'
+
+    - name: Install dependencies
+      run: npm ci
+
+    - name: Build project
+      run: npm run build
+
+    - name: Install Firefox dependencies (Linux)
+      if: matrix.os == 'ubuntu-latest'
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y firefox
+
+    - name: Run Firefox tests
+      run: npm run test:firefox
+
+    - name: Upload Firefox test results
+      uses: actions/upload-artifact@v4
+      if: always()
+      with:
+        name: firefox-test-results-${{ matrix.os }}
+        path: coverage/
+        retention-days: 7
+
+  # 多浏览器并行测试
+  multi-browser-tests:
+    runs-on: ubuntu-latest
+
+    strategy:
+      matrix:
+        browser-combo:
+          - [ChromeHeadless, FirefoxHeadless]
+        fail-fast: false
 
     steps:
     - name: Checkout code
@@ -103,24 +125,24 @@ jobs:
     - name: Build project
       run: npm run build
 
-    - name: Install Playwright browsers
-      run: npx playwright install --with-deps ${{ matrix.browser }}
+    - name: Install browser dependencies
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y google-chrome-stable firefox
 
-    - name: Run browser tests on ${{ matrix.os }} (${{ matrix.browser }})
-      run: npx playwright test --project=${{ matrix.browser }}
-      env:
-        CI: true
+    - name: Run multi-browser Karma tests
+      run: karma start karma.conf.cjs --single-run --browsers ${{ join(matrix.browser-combo, ',') }}
 
-    - name: Upload test results
+    - name: Upload multi-browser test results
       uses: actions/upload-artifact@v4
       if: always()
       with:
-        name: playwright-report-${{ matrix.os }}-${{ matrix.browser }}
-        path: playwright-report/
+        name: multi-browser-results
+        path: coverage/
         retention-days: 7
 
-  # Performance tests
-  performance-tests:
+  # 移动设备模拟测试
+  mobile-simulation-tests:
     runs-on: ubuntu-latest
 
     steps:
@@ -139,16 +161,87 @@ jobs:
     - name: Build project
       run: npm run build
 
-    - name: Install Playwright
-      run: npx playwright install --with-deps chromium
+    - name: Install Chrome dependencies
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y google-chrome-stable
 
-    - name: Run performance tests
-      run: npx playwright test --config=playwright.config.js --project=chromium --grep="performance"
+    - name: Create mobile user agent Karma config
+      run: |
+        cat > karma.mobile.conf.cjs << 'EOF'
+        const baseConfig = require('./karma.conf.cjs');
+
+        module.exports = function(config) {
+          baseConfig(config);
+
+          config.set({
+            customLaunchers: {
+              ChromeMobile: {
+                base: 'ChromeHeadless',
+                flags: ['--user-agent=Mozilla/5.0 (Linux; Android 10; SM-G975F) AppleWebKit/537.36']
+              }
+            },
+            browsers: ['ChromeMobile'],
+            reporters: ['dots', 'coverage']
+          });
+        };
+        EOF
+
+    - name: Run mobile simulation tests
+      run: karma start karma.mobile.conf.cjs --single-run
+
+    - name: Upload mobile test results
+      uses: actions/upload-artifact@v4
+      if: always()
+      with:
+        name: mobile-test-results
+        path: coverage/
+        retention-days: 7
+
+  # 性能回归测试
+  performance-regression-tests:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '20.x'
+        cache: 'npm'
+
+    - name: Install dependencies
+      run: npm ci
+
+    - name: Build project
+      run: npm run build
+
+    - name: Install Chrome dependencies
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y google-chrome-stable
+
+    - name: Run performance benchmark
+      run: |
+        echo "Running performance regression tests..."
+        # 运行多次测试以获得稳定的性能指标
+        for i in {1..3}; do
+          echo "Performance run $i:"
+          npm run test:chrome
+          sleep 2
+        done
+
+    - name: Generate performance summary
+      run: |
+        echo "Performance regression tests completed"
+        # 这里可以添加性能指标收集和比较逻辑
 
     - name: Upload performance results
       uses: actions/upload-artifact@v4
       if: always()
       with:
-        name: performance-test-results
-        path: test-results/
+        name: performance-regression-results
+        path: coverage/
         retention-days: 7

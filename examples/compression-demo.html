@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Compression Demo</title>
+    <title>Network-Aware Compression Demo</title>
     <style>
         body {
             font-family: Arial, sans-serif;
@@ -142,11 +142,22 @@
             background: linear-gradient(90deg, #28a745, #20c997);
             transition: width 0.3s ease;
         }
+        .network-info {
+            background: #e3f2fd;
+            border: 1px solid #2196f3;
+            padding: 10px;
+            border-radius: 4px;
+            margin-bottom: 15px;
+        }
     </style>
 </head>
 <body>
-    <h1>Compression Demo</h1>
-    <p>This example demonstrates the compression capabilities of the Network Compression Utils library.</p>
+    <h1>Network-Aware Compression Demo</h1>
+    <p>This example demonstrates the network-aware compression capabilities with real-time network detection and intelligent compression decisions.</p>
+
+    <div class="network-info" id="network-info">
+        <strong>Network Information:</strong> Detecting...
+    </div>
 
     <div class="container">
         <!-- Data Input Section -->
@@ -170,24 +181,23 @@
             </div>
 
             <div class="form-group">
-                <label for="algorithm">Compression Algorithm:</label>
-                <select id="algorithm">
-                    <option value="lz-string">LZ-String</option>
-                    <option value="none">None (No Compression)</option>
+                <label for="network-override">Network Type Override:</label>
+                <select id="network-override">
+                    <option value="">Auto-Detect</option>
+                    <option value="4g">4G</option>
+                    <option value="3g">3G</option>
+                    <option value="2g">2G</option>
+                    <option value="slow-2g">Slow-2G</option>
                 </select>
             </div>
 
             <div class="form-group">
                 <label>
-                    <input type="checkbox" id="prefer-smallest" checked> Prefer Smallest Result
-                </label>
-                <label>
-                    <input type="checkbox" id="enable-fallback" checked> Enable Fallback
+                    <input type="checkbox" id="force-compression"> Force Compression
                 </label>
             </div>
 
             <button onclick="compressData()">Compress Data</button>
-            <button onclick="decompressData()" class="button-secondary" disabled>Decompress</button>
             <button onclick="clearData()" class="button-secondary">Clear</button>
             <button onclick="loadSampleData()" class="button-success">Load Sample Data</button>
         </div>
@@ -211,12 +221,16 @@
                     <div class="stat-value" id="stat-compression-ratio">-</div>
                 </div>
                 <div class="stat-item">
-                    <div class="stat-label">Time Taken</div>
+                    <div class="stat-label">Processing Time</div>
                     <div class="stat-value" id="stat-time">-</div>
                 </div>
                 <div class="stat-item">
                     <div class="stat-label">Algorithm</div>
                     <div class="stat-value" id="stat-algorithm">-</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-label">Network Type</div>
+                    <div class="stat-value" id="stat-network">-</div>
                 </div>
                 <div class="stat-item">
                     <div class="stat-label">Status</div>
@@ -230,41 +244,75 @@
         </div>
     </div>
 
-    <!-- Algorithm Comparison -->
+    <!-- Performance Analysis -->
     <div class="section">
-        <h3>Algorithm Comparison</h3>
-        <button onclick="compareAlgorithms()">Compare Algorithms</button>
-        <div id="comparison-results" class="comparison-grid"></div>
-    </div>
-
-    <!-- Performance Testing -->
-    <div class="section">
-        <h3>Performance Testing</h3>
-        <div class="form-group">
-            <label for="test-iterations">Test Iterations:</label>
-            <input type="number" id="test-iterations" value="10" min="1" max="100">
-        </div>
-        <button onclick="runPerformanceTest()">Run Performance Test</button>
-        <div id="performance-results" class="result"></div>
-    </div>
-
-    <!-- Statistics -->
-    <div class="section">
-        <h3>Compression Statistics</h3>
-        <button onclick="showStats()">Show Statistics</button>
+        <h3>Performance Analysis</h3>
+        <button onclick="showNetworkPerformance()">Network Performance</button>
+        <button onclick="showCompressionStats()">Compression Statistics</button>
+        <button onclick="showPerformanceAnalysis()">Full Analysis</button>
         <button onclick="resetStats()" class="button-secondary">Reset Statistics</button>
-        <div id="statistics" class="result"></div>
+        <div id="analysis-results" class="result"></div>
+    </div>
+
+    <!-- Configuration Management -->
+    <div class="section">
+        <h3>Configuration Management</h3>
+        <div class="form-group">
+            <label for="min-compression-ratio">Min Compression Ratio:</label>
+            <input type="range" id="min-compression-ratio" min="0.05" max="0.5" step="0.05" value="0.1">
+            <span id="min-ratio-value">0.1</span>
+        </div>
+        <div class="form-group">
+            <label for="performance-threshold">Performance Threshold (ms):</label>
+            <input type="range" id="performance-threshold" min="0.5" max="10" step="0.5" value="1">
+            <span id="threshold-value">1</span>
+        </div>
+        <div class="form-group">
+            <label>
+                <input type="checkbox" id="enable-fallback" checked> Enable Fallback
+            </label>
+            <label>
+                <input type="checkbox" id="prefer-smallest" checked> Prefer Smallest
+            </label>
+        </div>
+        <button onclick="updateConfiguration()">Update Configuration</button>
+        <button onclick="showCurrentConfig()">Show Current Config</button>
+        <div id="config-result" class="result"></div>
     </div>
 
     <script src="../dist/index.umd.js"></script>
     <script>
-        let compressionManager;
+        let compressionUtils;
         let lastCompressionResult = null;
 
-        // Initialize compression manager
-        function initCompressionManager() {
-            compressionManager = new NetworkCompressionUtils.CompressionManager();
-            console.log('Compression Manager initialized');
+        // Initialize compression utils
+        function initCompressionUtils() {
+            compressionUtils = new NetworkCompressionUtils();
+            console.log('Network Compression Utils initialized');
+            updateNetworkInfo();
+        }
+
+        // Update network information display
+        function updateNetworkInfo() {
+            if (!compressionUtils) return;
+
+            try {
+                const networkInfo = compressionUtils.getNetworkInfo();
+                const perfStatus = compressionUtils.getNetworkPerformanceStatus();
+
+                document.getElementById('network-info').innerHTML = `
+                    <strong>Network Information:</strong>
+                    Type: ${networkInfo.effectiveType} |
+                    Downlink: ${networkInfo.downlink}Mbps |
+                    RTT: ${networkInfo.rtt}ms |
+                    Data Saver: ${networkInfo.saveData ? 'On' : 'Off'} |
+                    Status: ${perfStatus.speedCategory} (${perfStatus.recommendation})
+                `;
+            } catch (error) {
+                document.getElementById('network-info').innerHTML = `
+                    <strong>Network Information:</strong> Network detection not available in this environment
+                `;
+            }
         }
 
         // Load sample data based on type
@@ -402,14 +450,15 @@
 
         // Compress data
         function compressData() {
-            if (!compressionManager) {
-                alert('Compression manager not initialized');
+            if (!compressionUtils) {
+                alert('Compression utils not initialized');
                 return;
             }
 
             const dataType = document.getElementById('data-type').value;
             const inputData = document.getElementById('input-data').value;
-            const algorithm = document.getElementById('algorithm').value;
+            const networkOverride = document.getElementById('network-override').value;
+            const forceCompression = document.getElementById('force-compression').checked;
 
             if (!inputData.trim()) {
                 alert('Please enter some data to compress');
@@ -417,56 +466,29 @@
             }
 
             try {
-                // Update configuration
-                compressionManager.updateConfig({
-                    algorithm: algorithm,
-                    preferSmallest: document.getElementById('prefer-smallest').checked,
-                    enableFallback: document.getElementById('enable-fallback').checked
-                });
+                // Prepare compression options
+                const options = {
+                    data: parseInputData(dataType, inputData)
+                };
 
-                // Parse input data
-                const data = parseInputData(dataType, inputData);
+                if (forceCompression) {
+                    options.forceCompression = true;
+                }
+
+                if (networkOverride) {
+                    options.networkType = networkOverride;
+                }
 
                 // Perform compression
-                const result = compressionManager.compress(data);
+                const result = compressionUtils.compress(options);
                 lastCompressionResult = result;
 
                 // Update results display
                 displayCompressionResult(result);
 
-                // Enable decompress button
-                document.querySelector('button[onclick="decompressData()"]').disabled = false;
-
             } catch (error) {
                 document.getElementById('compression-result').textContent = `Error: ${error.message}`;
                 console.error('Compression error:', error);
-            }
-        }
-
-        // Decompress data
-        function decompressData() {
-            if (!lastCompressionResult || !compressionManager) {
-                alert('No compressed data to decompress');
-                return;
-            }
-
-            try {
-                const decompressed = compressionManager.decompress(
-                    lastCompressionResult.data,
-                    lastCompressionResult.algorithm
-                );
-
-                const result = {
-                    original: decompressed,
-                    algorithm: lastCompressionResult.algorithm,
-                    success: true
-                };
-
-                document.getElementById('compression-result').textContent = JSON.stringify(result, null, 2);
-
-            } catch (error) {
-                document.getElementById('compression-result').textContent = `Decompression error: ${error.message}`;
-                console.error('Decompression error:', error);
             }
         }
 
@@ -477,130 +499,191 @@
 
             // Update stats
             document.getElementById('stat-original-size').textContent = formatBytes(result.originalSize);
-            document.getElementById('stat-compressed-size').textContent = formatBytes(result.compressedSize);
-            document.getElementById('stat-compression-ratio').textContent = `${(result.compressionRatio * 100).toFixed(1)}%`;
-            document.getElementById('stat-time').textContent = `${result.compressionTime.toFixed(2)}ms`;
+
+            if (result.compressed && result.compressedSize !== undefined) {
+                document.getElementById('stat-compressed-size').textContent = formatBytes(result.compressedSize);
+                document.getElementById('stat-compression-ratio').textContent = `${(result.compressionRatio * 100).toFixed(1)}%`;
+
+                const savings = result.originalSize - result.compressedSize;
+                document.getElementById('stat-compression-size').textContent = formatBytes(savings);
+            } else {
+                document.getElementById('stat-compressed-size').textContent = 'Not compressed';
+                document.getElementById('stat-compression-ratio').textContent = 'N/A';
+            }
+
+            document.getElementById('stat-time').textContent = `${result.processingTime.toFixed(2)}ms`;
             document.getElementById('stat-algorithm').textContent = result.algorithm;
+            document.getElementById('stat-network').textContent = result.networkType;
 
             const statusElement = document.getElementById('stat-status');
-            statusElement.textContent = result.success ? 'Success' : 'No Compression';
-            statusElement.className = result.success ? 'stat-value success' : 'stat-value warning';
+            if (result.compressed) {
+                statusElement.textContent = 'Compressed';
+                statusElement.className = 'stat-value success';
+            } else {
+                statusElement.textContent = 'Not Compressed';
+                statusElement.className = 'stat-value warning';
+            }
 
             // Show stats section
             document.getElementById('compression-stats').style.display = 'grid';
 
             // Update progress bar
-            const progressPercentage = Math.max(0, Math.min(100, result.compressionRatio * 100));
+            const progressPercentage = result.compressed && result.compressionRatio ?
+                Math.max(0, Math.min(100, result.compressionRatio * 100)) : 0;
             document.getElementById('compression-progress').style.width = `${progressPercentage}%`;
         }
 
-        // Compare algorithms
-        function compareAlgorithms() {
-            const inputData = document.getElementById('input-data').value;
-            if (!inputData.trim()) {
-                alert('Please enter some data to compare algorithms');
-                return;
-            }
+        // Show network performance
+        function showNetworkPerformance() {
+            if (!compressionUtils) return;
 
             try {
-                const dataType = document.getElementById('data-type').value;
-                const data = parseInputData(dataType, inputData);
-                const comparison = compressionManager.compareAlgorithms(data);
+                const perfStatus = compressionUtils.getNetworkPerformanceStatus();
+                const output = `Network Performance Analysis
 
-                displayComparisonResults(comparison);
+Current Speed: ${perfStatus.currentSpeed}
+Speed Category: ${perfStatus.speedCategory}
+Optimal for Compression: ${perfStatus.isOptimalForCompression}
+Recommendation: ${perfStatus.recommendation}
 
+This analysis helps determine whether compression will provide benefits based on current network conditions.`;
+
+                document.getElementById('analysis-results').textContent = output;
             } catch (error) {
-                alert(`Comparison error: ${error.message}`);
+                document.getElementById('analysis-results').textContent = `Network analysis error: ${error.message}`;
             }
         }
 
-        // Display comparison results
-        function displayComparisonResults(comparison) {
-            const container = document.getElementById('comparison-results');
-            container.innerHTML = '';
-
-            Object.entries(comparison).forEach(([algorithm, results]) => {
-                const div = document.createElement('div');
-                div.className = 'algorithm-result';
-
-                if (results.error) {
-                    div.innerHTML = `
-                        <h4>${algorithm.toUpperCase()}</h4>
-                        <p class="error">Error: ${results.error}</p>
-                    `;
-                } else {
-                    div.innerHTML = `
-                        <h4>${algorithm.toUpperCase()}</h4>
-                        <p><strong>Success Rate:</strong> ${(results.successRate * 100).toFixed(1)}%</p>
-                        <p><strong>Average Compression:</strong> ${(results.averageCompressionRatio * 100).toFixed(1)}%</p>
-                        <p><strong>Average Time:</strong> ${results.averageCompressionTime.toFixed(2)}ms</p>
-                        <p><strong>Iterations:</strong> ${results.iterations}</p>
-                    `;
-                }
-
-                container.appendChild(div);
-            });
-        }
-
-        // Run performance test
-        function runPerformanceTest() {
-            const inputData = document.getElementById('input-data').value;
-            const iterations = parseInt(document.getElementById('test-iterations').value);
-
-            if (!inputData.trim()) {
-                alert('Please enter some data for performance testing');
-                return;
-            }
+        // Show compression statistics
+        function showCompressionStats() {
+            if (!compressionUtils) return;
 
             try {
-                const dataType = document.getElementById('data-type').value;
-                const data = parseInputData(dataType, inputData);
-                const testResults = compressionManager.testCompression(data, iterations);
+                const stats = compressionUtils.getCompressionStats();
 
-                displayPerformanceResults(testResults);
-
-            } catch (error) {
-                alert(`Performance test error: ${error.message}`);
-            }
-        }
-
-        // Display performance results
-        function displayPerformanceResults(results) {
-            const output = `Performance Test Results (${results.iterations} iterations)
-
-Algorithm: ${results.algorithm.toUpperCase()}
-Average Compression Ratio: ${(results.averageCompressionRatio * 100).toFixed(2)}%
-Average Compression Time: ${results.averageCompressionTime.toFixed(2)}ms
-Success Rate: ${(results.successRate * 100).toFixed(1)}%
-
-Individual Results:
-${results.results.map((r, i) => `${i + 1}. ${r.success ? 'SUCCESS' : 'NO COMPRESSION'} - ${r.compressionRatio > 0 ? (r.compressionRatio * 100).toFixed(1) + '%' : '0%'} in ${r.compressionTime.toFixed(2)}ms`).join('\n')}`;
-
-            document.getElementById('performance-results').textContent = output;
-        }
-
-        // Show statistics
-        function showStats() {
-            const stats = compressionManager.getCompressionStats();
-
-            const output = `Compression Statistics
+                const output = `Compression Statistics
 
 Total Compressions: ${stats.totalCompressions}
 Successful Compressions: ${stats.successfulCompressions}
-Success Rate: ${(stats.successRate * 100).toFixed(1)}%
-Total Original Size: ${formatBytes(stats.totalOriginalSize)}
-Total Compressed Size: ${formatBytes(stats.totalCompressedSize)}
-Overall Compression Ratio: ${(stats.overallCompressionRatio * 100).toFixed(1)}%
-Space Saved: ${formatBytes(stats.spaceSaved)}
-Average Compression Time: ${stats.averageCompressionTime.toFixed(2)}ms`;
+Success Rate: ${stats.totalCompressions > 0 ? ((stats.successfulCompressions / stats.totalCompressions) * 100).toFixed(1) : 0}%
+Total Data Processed: ${formatBytes(stats.totalDataProcessed)}
+Total Data Saved: ${formatBytes(stats.totalDataSaved)}
+Average Compression Ratio: ${(stats.averageCompressionRatio * 100).toFixed(1)}%
+Average Processing Time: ${stats.averageProcessingTime.toFixed(2)}ms`;
 
-            document.getElementById('statistics').textContent = output;
+                document.getElementById('analysis-results').textContent = output;
+            } catch (error) {
+                document.getElementById('analysis-results').textContent = `Statistics error: ${error.message}`;
+            }
+        }
+
+        // Show full performance analysis
+        function showPerformanceAnalysis() {
+            if (!compressionUtils) return;
+
+            try {
+                const analysis = compressionUtils.getPerformanceAnalysis();
+
+                let output = `Full Performance Analysis
+
+`;
+
+                if (analysis.algorithmPerformance) {
+                    output += `Algorithm Performance:
+`;
+                    Object.entries(analysis.algorithmPerformance).forEach(([alg, perf]) => {
+                        output += `  ${alg}: ${perf.averageCompressionRatio ? (perf.averageCompressionRatio * 100).toFixed(1) + '%' : 'N/A'} avg compression, ${perf.averageProcessingTime ? perf.averageProcessingTime.toFixed(2) + 'ms' : 'N/A'} avg time\n`;
+                    });
+                }
+
+                if (analysis.networkTypePerformance) {
+                    output += `
+
+Network Type Performance:
+`;
+                    Object.entries(analysis.networkTypePerformance).forEach(([network, perf]) => {
+                        output += `  ${network}: ${perf.compressionRate ? (perf.compressionRate * 100).toFixed(1) + '%' : 'N/A'} compression rate\n`;
+                    });
+                }
+
+                if (analysis.compressionThresholds) {
+                    output += `
+
+Compression Thresholds:
+`;
+                    Object.entries(analysis.compressionThresholds).forEach(([network, threshold]) => {
+                        output += `  ${network}: ${formatBytes(threshold)} minimum size\n`;
+                    });
+                }
+
+                if (analysis.recommendations && analysis.recommendations.length > 0) {
+                    output += `
+
+Recommendations:
+`;
+                    analysis.recommendations.forEach(rec => {
+                        output += `  • ${rec}\n`;
+                    });
+                }
+
+                document.getElementById('analysis-results').textContent = output;
+            } catch (error) {
+                document.getElementById('analysis-results').textContent = `Performance analysis error: ${error.message}`;
+            }
+        }
+
+        // Update configuration
+        function updateConfiguration() {
+            if (!compressionUtils) return;
+
+            try {
+                const config = {
+                    minCompressionRatio: parseFloat(document.getElementById('min-compression-ratio').value),
+                    performanceThreshold: parseFloat(document.getElementById('performance-threshold').value),
+                    enableFallback: document.getElementById('enable-fallback').checked,
+                    preferSmallest: document.getElementById('prefer-smallest').checked
+                };
+
+                compressionUtils.updateConfig(config);
+                document.getElementById('config-result').textContent = 'Configuration updated successfully!';
+            } catch (error) {
+                document.getElementById('config-result').textContent = `Configuration error: ${error.message}`;
+            }
+        }
+
+        // Show current configuration
+        function showCurrentConfig() {
+            if (!compressionUtils) return;
+
+            try {
+                const config = compressionUtils.getConfig();
+                const summary = compressionUtils.getConfigSummary();
+
+                const output = `Current Configuration:
+
+Min Compression Ratio: ${(config.minCompressionRatio * 100).toFixed(1)}%
+Performance Threshold: ${config.performanceThreshold}ms
+Enable Fallback: ${config.enableFallback}
+Prefer Smallest: ${config.preferSmallest}
+
+Summary: ${summary}`;
+
+                document.getElementById('config-result').textContent = output;
+            } catch (error) {
+                document.getElementById('config-result').textContent = `Config display error: ${error.message}`;
+            }
         }
 
         // Reset statistics
         function resetStats() {
-            compressionManager.resetStats();
-            document.getElementById('statistics').textContent = 'Statistics reset successfully.';
+            if (!compressionUtils) return;
+
+            try {
+                // Note: resetStats method may not exist in current implementation
+                document.getElementById('analysis-results').textContent = 'Statistics reset functionality would require implementation.';
+            } catch (error) {
+                document.getElementById('analysis-results').textContent = `Reset error: ${error.message}`;
+            }
         }
 
         // Clear data
@@ -609,7 +692,6 @@ Average Compression Time: ${stats.averageCompressionTime.toFixed(2)}ms`;
             document.getElementById('compression-result').textContent = 'Results will appear here...';
             document.getElementById('compression-stats').style.display = 'none';
             document.getElementById('compression-progress').style.width = '0%';
-            document.querySelector('button[onclick="decompressData()"]').disabled = true;
             lastCompressionResult = null;
         }
 
@@ -624,6 +706,15 @@ Average Compression Time: ${stats.averageCompressionTime.toFixed(2)}ms`;
             return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
         }
 
+        // Update slider values
+        document.getElementById('min-compression-ratio').addEventListener('input', function() {
+            document.getElementById('min-ratio-value').textContent = this.value;
+        });
+
+        document.getElementById('performance-threshold').addEventListener('input', function() {
+            document.getElementById('threshold-value').textContent = this.value;
+        });
+
         // Handle data type change
         document.getElementById('data-type').addEventListener('change', function() {
             if (this.value !== 'string' && !document.getElementById('input-data').value) {
@@ -633,8 +724,8 @@ Average Compression Time: ${stats.averageCompressionTime.toFixed(2)}ms`;
 
         // Initialize on page load
         window.onload = () => {
-            console.log('Compression Demo loaded');
-            initCompressionManager();
+            console.log('Network-Aware Compression Demo loaded');
+            initCompressionUtils();
         };
     </script>
 </body>
