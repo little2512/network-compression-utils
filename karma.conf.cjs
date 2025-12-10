@@ -11,14 +11,11 @@ module.exports = function(config) {
       // LZ-String library (loaded first)
       'node_modules/lz-string/libs/lz-string.min.js',
 
-      // Test setup (must be loaded before test files to set up mocks)
-      'src/tests/jasmine/test-setup.js',
-
-      // Source files for coverage
-      'src/**/*.js',
-
-      // Our browser-bundled library
+      // Our browser-bundled library (make NetworkCompressionUtils available)
       'dist/browser.js',
+
+      // Test setup (must be loaded after library but before test files)
+      'src/tests/jasmine/test-setup.js',
 
       // Test files
       'src/tests/jasmine/*.spec.js'
@@ -46,7 +43,6 @@ module.exports = function(config) {
 
     // Preprocess matching files before serving them to the browser
     preprocessors: {
-      'src/**/*.js': ['coverage'],
       'dist/browser.js': ['coverage']
     },
 
