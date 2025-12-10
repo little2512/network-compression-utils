@@ -64,6 +64,9 @@ module.exports = function(config) {
     // Browser timeout
     browserNoActivityTimeout: 30000,
 
+    // Browser capture timeout (for slow-starting browsers like Firefox)
+    captureTimeout: 120000,
+
     // Continuous Integration mode
     singleRun: true,
 
