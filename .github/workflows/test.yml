@@ -80,9 +80,9 @@ jobs:
 
     strategy:
       matrix:
-        browser: [ChromeHeadless, FirefoxHeadless, EdgeHeadless]
+        browser: [ChromeHeadless, EdgeHeadless]
         # 可以添加更多浏览器，但需要确保CI环境支持
-        # browser: [ChromeHeadless, FirefoxHeadless, EdgeHeadless, Safari]
+        # browser: [ChromeHeadless, EdgeHeadless, Safari]
 
     steps:
     - name: Checkout code
@@ -102,41 +102,17 @@ jobs:
         npm run build
         npm run build:browser
 
-    - name: Install additional browser dependencies
-      if: matrix.browser == 'FirefoxHeadless' || matrix.browser == 'EdgeHeadless'
+    - name: Install Microsoft Edge
       run: |
+        curl -fsSL https://packages.microsoft.com/keys/microsoft.asc | gpg --dearmor > /tmp/microsoft.gpg
+        sudo install -o root -g root -m 644 /tmp/microsoft.gpg /etc/apt/trusted.gpg.d/
+        sudo sh -c 'echo "deb [arch=amd64,arm64,armhf signed-by=/etc/apt/trusted.gpg.d/microsoft.gpg] https://packages.microsoft.com/repos/microsoft-ubuntu-jammy-prod jammy main" > /etc/apt/sources.list.d/microsoft-edge-dev.list'
         sudo apt-get update
-        # Install Microsoft Edge
-        if [ "${{ matrix.browser }}" = "EdgeHeadless" ]; then
-          curl -fsSL https://packages.microsoft.com/keys/microsoft.asc | gpg --dearmor > /tmp/microsoft.gpg
-          sudo install -o root -g root -m 644 /tmp/microsoft.gpg /etc/apt/trusted.gpg.d/
-          sudo sh -c 'echo "deb [arch=amd64,arm64,armhf signed-by=/etc/apt/trusted.gpg.d/microsoft.gpg] https://packages.microsoft.com/repos/microsoft-ubuntu-jammy-prod jammy main" > /etc/apt/sources.list.d/microsoft-edge-dev.list'
-          sudo apt-get update
-          sudo apt-get install -y microsoft-edge-stable
-        fi
-        # Handle Firefox installation - avoid snap conflicts
-        if [ "${{ matrix.browser }}" = "FirefoxHeadless" ]; then
-          echo "Setting up Firefox for headless testing..."
-          # Remove snap version to avoid conflicts
-          sudo snap remove firefox --purge || true
-          # Download and install Firefox directly from Mozilla
-          wget -O firefox.tar.bz2 "https://download.mozilla.org/?product=firefox-latest-ssl&os=linux64&lang=en-US"
-          sudo tar -xjf firefox.tar.bz2 -C /opt/
-          sudo ln -sf /opt/firefox/firefox /usr/local/bin/firefox
-          rm firefox.tar.bz2
-          # Verify Firefox installation
-          /usr/local/bin/firefox --version
-        fi
+        sudo apt-get install -y microsoft-edge-stable
 
     - name: Run Karma tests on ${{ matrix.browser }}
       run: |
-        if [ "${{ matrix.browser }}" = "FirefoxHeadless" ]; then
-          # Firefox testing with increased timeout and error handling
-          npx karma start karma.conf.cjs --single-run --browsers FirefoxHeadless \
-            --capture-timeout 120000 \
-            --browser-no-timeout \
-            || echo "Firefox tests completed with warnings"
-        elif [ "${{ matrix.browser }}" = "EdgeHeadless" ]; then
+        if [ "${{ matrix.browser }}" = "EdgeHeadless" ]; then
           # Edge testing with error handling
           npx karma start karma.conf.cjs --single-run --browsers EdgeHeadless \
             --capture-timeout 120000 \
@@ -151,6 +127,48 @@ jobs:
       if: always()
       with:
         name: karma-results-${{ matrix.browser }}
+        path: coverage/
+        retention-days: 30
+
+  # Firefox 专用测试 - 在 Ubuntu 20.04 上运行避免 snap 冲突
+  firefox-compatibility:
+    runs-on: ubuntu-20.04
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '20.x'
+        cache: 'npm'
+
+    - name: Install dependencies
+      run: npm ci
+
+    - name: Build project
+      run: |
+        npm run build
+        npm run build:browser
+
+    - name: Install Firefox
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y firefox
+
+    - name: Run Firefox tests with timeout handling
+      run: |
+        npx karma start karma.conf.cjs --single-run --browsers FirefoxHeadless \
+          --capture-timeout 120000 \
+          --browser-no-timeout \
+          || echo "Firefox tests completed with warnings"
+
+    - name: Upload Firefox test results
+      uses: actions/upload-artifact@v4
+      if: always()
+      with:
+        name: karma-results-firefox
         path: coverage/
         retention-days: 30
 
