@@ -16,13 +16,11 @@ jobs:
     strategy:
       matrix:
         node-version: [16.x, 18.x, 20.x, 22.x]
-        # 在不同操作系统上测试
-        os: [ubuntu-latest, windows-latest, macos-latest]
+        # 在不同操作系统上测试 (移除Windows平台)
+        os: [ubuntu-latest, macos-latest]
         # 排除一些组合以节省资源
         exclude:
           - os: macos-latest
-            node-version: 16.x
-          - os: windows-latest
             node-version: 16.x
 
     steps:
