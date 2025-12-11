@@ -2,6 +2,8 @@ name: Publish to npm
 
 on:
   push:
+    branches:
+      - main
     tags:
       - 'v*'
   release:
@@ -50,7 +52,7 @@ jobs:
   publish:
     needs: test
     runs-on: ubuntu-latest
-    if: github.event_name == 'release' || startsWith(github.ref, 'refs/tags/v')
+    if: github.event_name == 'release' || startsWith(github.ref, 'refs/tags/v') || (github.ref == 'refs/heads/main' && github.event_name == 'push')
 
     steps:
     - name: Checkout code
@@ -69,7 +71,30 @@ jobs:
     - name: Build project
       run: npm run build
 
+    - name: Check if version has changed
+      id: version_check
+      run: |
+        # 获取当前版本
+        CURRENT_VERSION=$(npm pkg get version | tr -d '"')
+        echo "current_version=$CURRENT_VERSION" >> $GITHUB_OUTPUT
+
+        # 检查是否为main分支推送且版本标签不存在
+        if [[ "$GITHUB_REF" == "refs/heads/main" && "$GITHUB_EVENT_NAME" == "push" ]]; then
+          # 检查当前版本的标签是否已存在
+          if git rev-parse "v$CURRENT_VERSION" >/dev/null 2>&1; then
+            echo "Version $CURRENT_VERSION already published, skipping..."
+            echo "should_publish=false" >> $GITHUB_OUTPUT
+          else
+            echo "New version $CURRENT_VERSION detected, publishing..."
+            echo "should_publish=true" >> $GITHUB_OUTPUT
+          fi
+        else
+          echo "Tag or release trigger, publishing..."
+          echo "should_publish=true" >> $GITHUB_OUTPUT
+        fi
+
     - name: Check package before publish
+      if: steps.version_check.outputs.should_publish == 'true'
       run: |
         echo "📦 Package preview before publishing:"
         npm pack --dry-run
@@ -80,22 +105,23 @@ jobs:
         npm pkg get | jq .publishConfig
 
     - name: Publish to npm
+      if: steps.version_check.outputs.should_publish == 'true'
       run: npm publish --access public
       env:
         NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
 
     - name: Create GitHub Release
-      if: github.event_name == 'release'
+      if: steps.version_check.outputs.should_publish == 'true' && (github.event_name == 'release' || startsWith(github.ref, 'refs/tags/v'))
       uses: actions/create-release@v1
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       with:
-        tag_name: ${{ github.ref }}
-        release_name: ${{ github.ref }}
+        tag_name: v${{ steps.version_check.outputs.current_version }}
+        release_name: v${{ steps.version_check.outputs.current_version }}
         draft: false
         prerelease: false
         body: |
-          ## Changes in this release
+          ## Version ${{ steps.version_check.outputs.current_version }}
 
           ### 🚀 Features
           - Network-aware data compression with automatic decision making
@@ -119,6 +145,11 @@ jobs:
           - Comprehensive browser testing (Chrome, Firefox, Edge)
           - Focused CI/CD on browser environment testing
           - Optimized for real-world network conditions
+
+          ### 📦 Installation
+          ```bash
+          npm install network-compression-utils@${{ steps.version_check.outputs.current_version }}
+          ```
 
           For detailed usage instructions, visit the [README](https://github.com/little2512/network-compression-utils#readme).
 

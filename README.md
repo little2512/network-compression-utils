@@ -6,7 +6,6 @@
 [![Browser Support](https://badges.aleen42.com/src/chrome.svg)](https://www.google.com/chrome/)
 [![Browser Support](https://badges.aleen42.com/src/edge.svg)](https://www.microsoft.com/edge/)
 [![Bundle Size](https://img.shields.io/bundlephobia/minzip/network-compression-utils)](https://bundlephobia.com/result?p=network-compression-utils)
-[![Auto Version](https://img.shields.io/badge/Auto%20Version-✅-brightgreen)](https://github.com/little2512/network-compression-utils/blob/main/.github/workflows/auto-version.yml)
 
 A JavaScript library for intelligent network-aware data compression that automatically adapts compression behavior based on real network performance and browser capabilities.
 
@@ -794,6 +793,38 @@ npm run lint
 
 # Fix linting issues
 npm run lint:fix
+```
+
+## Version Management
+
+This project uses **manual version management**. To release a new version:
+
+```bash
+# Bump patch version (1.0.4 -> 1.0.5)
+npm version patch
+
+# Bump minor version (1.0.4 -> 1.1.0)
+npm version minor
+
+# Bump major version (1.0.4 -> 2.0.0)
+npm version major
+
+# Or dry run to see what would be published
+npm run dry-run
+```
+
+After running `npm version`, the following happens automatically:
+- ✅ Package.json version is updated
+- ✅ Git commit and tag are created
+- ✅ Pushed to remote repository
+- ✅ CI/CD pipeline triggers automated npm publish
+- ✅ GitHub Release is created
+
+**Note**: Use descriptive commit messages when bumping versions:
+```bash
+npm version patch -m "fix: resolve critical bug"
+npm version minor -m "feat: add new compression algorithm"
+npm version major -m "breaking: update API structure"
 ```
 
 ## License
