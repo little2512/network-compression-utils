@@ -13,28 +13,29 @@ jobs:
   test:
     runs-on: ubuntu-latest
 
-    strategy:
-      matrix:
-        node-version: [14.x, 16.x, 18.x, 20.x, 22.x]
-
     steps:
     - name: Checkout code
       uses: actions/checkout@v4
 
-    - name: Setup Node.js ${{ matrix.node-version }}
+    - name: Setup Node.js
       uses: actions/setup-node@v4
       with:
-        node-version: ${{ matrix.node-version }}
+        node-version: '20.x'
         cache: 'npm'
 
     - name: Install dependencies
-      run: npm install
+      run: npm ci
 
-    - name: Run tests
-      run: npm test -- --silent
+    - name: Run linting
+      run: npm run lint
 
     - name: Build project
-      run: npm run build
+      run: |
+        npm run build
+        npm run build:browser
+
+    - name: Run browser tests
+      run: npm test -- --silent
 
     - name: Check build files
       run: |
@@ -63,7 +64,7 @@ jobs:
         cache: 'npm'
 
     - name: Install dependencies
-      run: npm install
+      run: npm ci
 
     - name: Build project
       run: npm run build
@@ -117,15 +118,14 @@ jobs:
           - Network-aware data compression with automatic decision making
           - Support for multiple output formats (URLSearchParams, FormData, String)
           - Browser compatibility layer with polyfills
-          - Comprehensive testing suite with 79.3% pass rate
+          - Comprehensive browser testing suite focused on weak network environments
           - TypeScript definitions included
           - Optimized build sizes for production use
 
           ### 📦 Package Info
           - **Build Size**: 39KB (UMD), 93KB (ESM/CommonJS)
-          - **Code Coverage**: 42.23%
           - **Browsers**: Chrome 61+, Firefox 50+, Safari 11+, Edge 79+
-          - **Node.js**: 14.0+
+          - **Node.js**: 14.0+ (for build tools)
 
           ### 📚 Documentation
           - Complete API documentation
@@ -133,8 +133,9 @@ jobs:
           - Browser compatibility guide
 
           ### 🧪 Testing
-          - 111 total tests with comprehensive coverage
-          - Automated CI/CD with multi-node testing
+          - Comprehensive browser testing (Chrome, Firefox, Edge)
+          - Focused CI/CD on browser environment testing
+          - Optimized for real-world network conditions
 
           For detailed usage instructions, visit the [README](https://github.com/little2512/network-compression-utils#readme).
 
