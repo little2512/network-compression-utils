@@ -69,32 +69,15 @@ jobs:
     - name: Build project
       run: npm run build
 
-    - name: Update package.json for publishing
-      run: |
-        # Ensure package.json has the correct fields for publishing
-        npm pkg set "publishConfig.access" "public"
-        npm pkg set "repository" "github:little2512/network-compression-utils"
-        npm pkg set "bugs.url" "https://github.com/little2512/network-compression-utils/issues"
-        npm pkg set "homepage" "https://github.com/little2512/network-compression-utils#readme"
-        npm pkg set "keywords[0]" "network"
-        npm pkg set "keywords[1]" "compression"
-        npm pkg set "keywords[2]" "browser"
-        npm pkg set "keywords[3]" "utility"
-        npm pkg set "keywords[4]" "performance"
-        npm pkg set "keywords[5]" "javascript"
-        npm pkg set "keywords[6]" "library"
-        npm pkg set "keywords[7]" "lz-string"
-        npm pkg set "keywords[8]" "network-aware"
-        npm pkg set "keywords[9]" "adaptive"
-        npm pkg set "keywords[10]" "optimization"
-
     - name: Check package before publish
       run: |
         echo "📦 Package preview before publishing:"
         npm pack --dry-run
         echo ""
-        echo "📋 Package.json contents:"
-        cat package.json
+        echo "📋 Package.json validation:"
+        npm pkg get | jq .name
+        npm pkg get | jq .version
+        npm pkg get | jq .publishConfig
 
     - name: Publish to npm
       run: npm publish --access public
