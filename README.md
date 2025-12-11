@@ -1,5 +1,13 @@
 # Network Compression Utils
 
+[![npm version](https://badge.fury.io/js/network-compression-utils.svg)](https://badge.fury.io/js/network-compression-utils)
+[![CI Status](https://github.com/little2512/network-compression-utils/workflows/Test%20Suite/badge.svg)](https://github.com/little2512/network-compression-utils/actions)
+[![codecov](https://codecov.io/gh/little2512/network-compression-utils/branch/main/graph/badge.svg)](https://codecov.io/gh/little2512/network-compression-utils)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+[![Browser Support](https://badges.aleen42.com/src/chrome.svg)](https://www.google.com/chrome/)
+[![Browser Support](https://badges.aleen42.com/src/edge.svg)](https://www.microsoft.com/edge/)
+[![Bundle Size](https://img.shields.io/bundlephobia/minzip/network-compression-utils)](https://bundlephobia.com/result?p=network-compression-utils)
+
 A JavaScript library for intelligent network-aware data compression that automatically adapts compression behavior based on real network performance and browser capabilities.
 
 ## ✨ Key Features
@@ -294,13 +302,15 @@ const urlParams = new URLSearchParams({
 
 ## Browser Support
 
-The library supports all modern browsers with automatic fallbacks:
+The library is optimized for and thoroughly tested on modern browsers:
 
-- ✅ Chrome 61+
-- ✅ Firefox 50+
-- ✅ Safari 11+
-- ✅ Edge 79+
+- ✅ Chrome 61+ (Primary testing environment)
+- ✅ Edge 79+ (CI tested)
+- ✅ Safari 11+ (Compatible)
+- ✅ Firefox 50+ (Compatible, manual testing)
 - ✅ Internet Explorer 11+ (with polyfills)
+
+**Note**: Our CI/CD pipeline focuses on Chrome and Edge for automated testing to ensure reliable and stable releases.
 
 ### Polyfills
 
@@ -799,6 +809,14 @@ MIT License - see LICENSE file for details.
 5. Open a Pull Request
 
 ## Changelog
+
+### v1.0.3 🔧 CI/CD Optimization
+- **IMPROVED**: Simplified GitHub Actions workflow to focus on browser testing
+- **IMPROVED**: Removed unstable Firefox testing from CI to improve reliability
+- **FIXED**: Fixed npm publish syntax error in GitHub Actions
+- **OPTIMIZED**: Reduced CI execution time by removing unnecessary multi-node testing
+- **MAINTAINED**: Continued comprehensive browser testing with Chrome and Edge
+- **UPDATED**: Added npm version badge and CI status indicators to README
 
 ### v1.0.2 🚀 Production Release
 - **NEW**: Real-time network performance analysis with 1ms transmission time thresholds
