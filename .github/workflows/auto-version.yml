@@ -74,6 +74,13 @@ jobs:
         echo "bump_type=$BUMP_TYPE" >> $GITHUB_OUTPUT
         echo "Version bump type: $BUMP_TYPE"
 
+    - name: Configure Git
+      if: steps.check.outputs.should_bump == 'true'
+      run: |
+        # 配置Git用户信息
+        git config --global user.name "github-actions[bot]"
+        git config --global user.email "github-actions[bot]@users.noreply.github.com"
+
     - name: Bump version
       if: steps.check.outputs.should_bump == 'true'
       run: |
@@ -92,10 +99,6 @@ jobs:
     - name: Push new version
       if: steps.check.outputs.should_bump == 'true'
       run: |
-        # 配置Git用户信息
-        git config --global user.name "github-actions[bot]"
-        git config --global user.email "github-actions[bot]@users.noreply.github.com"
-
         # 推送新版本和标签
         git push origin main --follow-tags
 
