@@ -1,6 +1,6 @@
 {
   "name": "network-compression-utils",
-  "version": "1.0.3",
+  "version": "1.0.4",
   "type": "module",
   "description": "A JavaScript library for intelligent network-aware data compression with real-time performance analysis",
   "main": "dist/index.js",
