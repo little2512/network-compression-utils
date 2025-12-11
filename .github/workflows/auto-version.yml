@@ -1,0 +1,147 @@
+name: Auto Version Bump
+
+on:
+  push:
+    branches:
+      - main
+  # 允许手动触发
+  workflow_dispatch:
+
+jobs:
+  auto-version:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      with:
+        # 获取完整历史记录，用于提交信息分析
+        fetch-depth: 0
+        # 使用token以便推送到仓库
+        token: ${{ secrets.GITHUB_TOKEN }}
+
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '20.x'
+        cache: 'npm'
+
+    - name: Install dependencies
+      run: npm ci
+
+    - name: Get current version
+      id: version
+      run: |
+        CURRENT_VERSION=$(npm pkg get version | tr -d '"')
+        echo "current_version=$CURRENT_VERSION" >> $GITHUB_OUTPUT
+        echo "Current version: $CURRENT_VERSION"
+
+    - name: Check if version bump is needed
+      id: check
+      run: |
+        # 获取最新的提交信息
+        LATEST_COMMIT=$(git log -1 --pretty=format:"%s")
+        echo "Latest commit: $LATEST_COMMIT"
+
+        # 检查是否包含版本升级相关的关键词
+        if [[ "$LATEST_COMMIT" =~ (bump|version|release|v[0-9]+\.[0-9]+\.[0-9]+) ]]; then
+          echo "Version bump already detected in commit, skipping"
+          echo "should_bump=false" >> $GITHUB_OUTPUT
+        else
+          echo "should_bump=true" >> $GITHUB_OUTPUT
+        fi
+
+    - name: Determine version bump type
+      id: bump_type
+      if: steps.check.outputs.should_bump == 'true'
+      run: |
+        # 获取最新的提交信息
+        LATEST_COMMIT=$(git log -1 --pretty=format:"%s")
+        echo "Analyzing commit: $LATEST_COMMIT"
+
+        # 根据提交信息决定版本升级类型
+        if [[ "$LATEST_COMMIT" =~ (fix|bug|patch|hotfix) ]]; then
+          BUMP_TYPE="patch"
+        elif [[ "$LATEST_COMMIT" =~ (feat|feature|add|new) ]]; then
+          BUMP_TYPE="minor"
+        elif [[ "$LATEST_COMMIT" =~ (breaking|major|rewrite) ]]; then
+          BUMP_TYPE="major"
+        else
+          # 默认为patch版本
+          BUMP_TYPE="patch"
+        fi
+
+        echo "bump_type=$BUMP_TYPE" >> $GITHUB_OUTPUT
+        echo "Version bump type: $BUMP_TYPE"
+
+    - name: Bump version
+      if: steps.check.outputs.should_bump == 'true'
+      run: |
+        # 执行版本升级
+        BUMP_TYPE="${{ steps.bump_type.outputs.bump_type }}"
+        echo "Bumping version with type: $BUMP_TYPE"
+
+        # 使用npm version升级版本
+        npm version $BUMP_TYPE -m "🔖 Auto version bump to %s [skip ci]"
+
+        # 获取新版本号
+        NEW_VERSION=$(npm pkg get version | tr -d '"')
+        echo "New version: $NEW_VERSION"
+        echo "new_version=$NEW_VERSION" >> $GITHUB_ENV
+
+    - name: Push new version
+      if: steps.check.outputs.should_bump == 'true'
+      run: |
+        # 配置Git用户信息
+        git config --global user.name "github-actions[bot]"
+        git config --global user.email "github-actions[bot]@users.noreply.github.com"
+
+        # 推送新版本和标签
+        git push origin main --follow-tags
+
+        echo "Version ${{ env.new_version }} pushed successfully"
+
+    - name: Create Release
+      if: steps.check.outputs.should_bump == 'true'
+      uses: actions/create-release@v1
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+        tag_name: v${{ env.new_version }}
+        release_name: v${{ env.new_version }}
+        draft: false
+        prerelease: false
+        body: |
+          ## Version ${{ env.new_version }}
+
+          This is an automatic version bump.
+
+          📝 **Changes**: See commit history for detailed changes
+
+          🚀 **Installation**:
+          ```bash
+          npm install network-compression-utils@${{ env.new_version }}
+          ```
+
+          📦 **Download**:
+          - [npm package](https://www.npmjs.com/package/network-compression-utils/v/${{ env.new_version }})
+          - [GitHub Release](https://github.com/little2512/network-compression-utils/releases/tag/v${{ env.new_version }})
+
+    - name: Summary
+      if: steps.check.outputs.should_bump == 'true'
+      run: |
+        echo "## ✅ Version Auto-Bump Complete" >> $GITHUB_STEP_SUMMARY
+        echo "" >> $GITHUB_STEP_SUMMARY
+        echo "- **Previous Version**: ${{ steps.version.outputs.current_version }}" >> $GITHUB_STEP_SUMMARY
+        echo "- **New Version**: ${{ env.new_version }}" >> $GITHUB_STEP_SUMMARY
+        echo "- **Bump Type**: ${{ steps.bump_type.outputs.bump_type }}" >> $GITHUB_STEP_SUMMARY
+        echo "- **Release Created**: ✅" >> $GITHUB_STEP_SUMMARY
+        echo "- **Package Published**: ✅ (via publish workflow)" >> $GITHUB_STEP_SUMMARY
+
+    - name: Skip Summary
+      if: steps.check.outputs.should_bump == 'false'
+      run: |
+        echo "## ⏭️ Version Bump Skipped" >> $GITHUB_STEP_SUMMARY
+        echo "" >> $GITHUB_STEP_SUMMARY
+        echo "- **Reason**: Version bump detected in latest commit" >> $GITHUB_STEP_SUMMARY
+        echo "- **Current Version**: ${{ steps.version.outputs.current_version }}" >> $GITHUB_STEP_SUMMARY
