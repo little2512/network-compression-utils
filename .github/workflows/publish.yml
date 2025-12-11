@@ -1,16 +1,15 @@
-name: Publish to npm
+name: Build and Test
 
 on:
   push:
-    tags:
-      - 'v*'
-  release:
-    types: [published]
-  # 允许手动触发发布
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main, develop ]
+  # 允许手动触发
   workflow_dispatch:
 
 jobs:
-  test:
+  build-and-test:
     runs-on: ubuntu-latest
 
     steps:
@@ -47,106 +46,5 @@ jobs:
         echo "UMD size:"
         du -h dist/index.umd.js
 
-  publish:
-    needs: test
-    runs-on: ubuntu-latest
-    if: github.event_name == 'release' || startsWith(github.ref, 'refs/tags/v')
-
-    steps:
-    - name: Checkout code
-      uses: actions/checkout@v4
-
-    - name: Setup Node.js
-      uses: actions/setup-node@v4
-      with:
-        node-version: '20.x'
-        registry-url: 'https://registry.npmjs.org'
-        cache: 'npm'
-
-    - name: Install dependencies
-      run: npm ci
-
-    - name: Build project
-      run: npm run build
-
-    - name: Get version info
-      id: version_info
-      run: |
-        # 从标签名中提取版本号
-        if [[ "$GITHUB_REF" =~ refs/tags/v(.+) ]]; then
-          VERSION="${BASH_REMATCH[1]}"
-          echo "version=$VERSION" >> $GITHUB_OUTPUT
-          echo "Publishing version: $VERSION"
-        else
-          echo "Unknown ref: $GITHUB_REF"
-          exit 1
-        fi
-
-    - name: Check package before publish
-      run: |
-        echo "📦 Package preview before publishing:"
-        npm pack --dry-run
-        echo ""
-        echo "📋 Package.json validation:"
-        npm pkg get | jq .name
-        npm pkg get | jq .version
-        echo "Tag version: ${{ steps.version_info.outputs.version }}"
-
-    - name: Publish to npm
-      run: npm publish --access public
-      env:
-        NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
-
-    - name: Create GitHub Release
-      if: github.event_name != 'release'
-      uses: actions/create-release@v1
-      env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      with:
-        tag_name: ${{ github.ref }}
-        release_name: ${{ github.ref }}
-        draft: false
-        prerelease: false
-        body: |
-          ## Version ${{ steps.version_info.outputs.version }}
-
-          ### 🚀 Features
-          - Network-aware data compression with automatic decision making
-          - Support for multiple output formats (URLSearchParams, FormData, String)
-          - Browser compatibility layer with polyfills
-          - Comprehensive browser testing suite focused on weak network environments
-          - TypeScript definitions included
-          - Optimized build sizes for production use
-
-          ### 📦 Package Info
-          - **Build Size**: 39KB (UMD), 93KB (ESM/CommonJS)
-          - **Browsers**: Chrome 61+, Firefox 50+, Safari 11+, Edge 79+
-          - **Node.js**: 14.0+ (for build tools)
-
-          ### 📚 Documentation
-          - Complete API documentation
-          - Usage examples and best practices
-          - Browser compatibility guide
-
-          ### 🧪 Testing
-          - Comprehensive browser testing (Chrome, Firefox, Edge)
-          - Focused CI/CD on browser environment testing
-          - Optimized for real-world network conditions
-
-          ### 📦 Installation
-          ```bash
-          npm install network-compression-utils@${{ steps.version_info.outputs.version }}
-          ```
-
-          For detailed usage instructions, visit the [README](https://github.com/little2512/network-compression-utils#readme).
-
-  notify:
-    needs: publish
-    runs-on: ubuntu-latest
-    if: success()
-    steps:
-    - name: Notify on success
-      run: |
-        echo "🎉 Successfully published to npm!"
-        echo "📦 Package: network-compression-utils"
-        echo "🌐 Repository: https://github.com/little2512/network-compression-utils"
+    - name: Test package creation
+      run: npm run dry-run

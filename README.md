@@ -797,10 +797,10 @@ npm run lint:fix
 
 ## Version Management
 
-This project uses **manual version management**. To release a new version:
+This project uses **manual version management** and **manual publishing**. To release a new version:
 
 ```bash
-# Bump patch version (1.0.4 -> 1.0.5)
+# 1. Bump patch version (1.0.4 -> 1.0.5)
 npm version patch
 
 # Bump minor version (1.0.4 -> 1.1.0)
@@ -817,8 +817,13 @@ After running `npm version`, the following happens automatically:
 - ✅ Package.json version is updated
 - ✅ Git commit and tag are created
 - ✅ Pushed to remote repository
-- ✅ CI/CD pipeline triggers automated npm publish
-- ✅ GitHub Release is created
+- ✅ CI/CD runs tests and builds (no auto-publish)
+
+**2. Manual Publish to npm**:
+```bash
+# After version bump, manually publish to npm
+npm publish --access public
+```
 
 **Note**: Use descriptive commit messages when bumping versions:
 ```bash
@@ -826,6 +831,11 @@ npm version patch -m "fix: resolve critical bug"
 npm version minor -m "feat: add new compression algorithm"
 npm version major -m "breaking: update API structure"
 ```
+
+**CI/CD Workflow**:
+- Build and test on every push to main/develop
+- No automatic npm publishing
+- Manual publishing ensures full control over releases
 
 ## License
 
