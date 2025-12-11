@@ -2,26 +2,26 @@
 
 [![npm version](https://badge.fury.io/js/network-compression-utils.svg)](https://badge.fury.io/js/network-compression-utils)
 [![CI Status](https://github.com/little2512/network-compression-utils/workflows/Test%20Suite/badge.svg)](https://github.com/little2512/network-compression-utils/actions)
-[![codecov](https://codecov.io/gh/little2512/network-compression-utils/branch/main/graph/badge.svg)](https://codecov.io/gh/little2512/network-compression-utils)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Browser Support](https://badges.aleen42.com/src/chrome.svg)](https://www.google.com/chrome/)
 [![Browser Support](https://badges.aleen42.com/src/edge.svg)](https://www.microsoft.com/edge/)
 [![Bundle Size](https://img.shields.io/bundlephobia/minzip/network-compression-utils)](https://bundlephobia.com/result?p=network-compression-utils)
+[![Auto Version](https://img.shields.io/badge/Auto%20Version-✅-brightgreen)](https://github.com/little2512/network-compression-utils/blob/main/.github/workflows/auto-version.yml)
 
 A JavaScript library for intelligent network-aware data compression that automatically adapts compression behavior based on real network performance and browser capabilities.
 
 ## ✨ Key Features
 
 - **🚀 Performance-Based Compression**: Real-time network performance analysis with 1ms transmission time thresholds
-- **Network Detection**: Automatically detects network conditions using Network Information API
-- **Weak Network Optimization**: Special handling for extremely slow connections (<5 Kbps) with three-tier detection
-- **Dynamic Thresholds**: Adaptive compression thresholds based on actual transmission performance, not just network labels
-- **Smart Compression Decisions**: AI-powered compression analysis considering data size, network speed, and transmission time
-- **Real-Time Speed Testing**: Built-in network speed measurement with concurrent requests and jitter analysis
-- **String-Only Output**: Optimized for JSON/object to string compression scenarios with multiple format support
-- **Browser Compatibility**: Works across all modern browsers with automatic polyfills and graceful fallbacks
-- **Performance Monitoring**: Comprehensive compression statistics and performance metrics
-- **Configurable**: Flexible configuration system with mobile/desktop optimization profiles
+- **🌐 Network Detection**: Automatically detects network conditions using Network Information API
+- **📶 Weak Network Optimization**: Special handling for extremely slow connections (<5 Kbps) with three-tier detection
+- **⚡ Dynamic Thresholds**: Adaptive compression thresholds based on actual transmission performance, not just network labels
+- **🧠 Smart Compression Decisions**: AI-powered compression analysis considering data size, network speed, and transmission time
+- **📊 Real-Time Speed Testing**: Built-in network speed measurement with concurrent requests and jitter analysis
+- **🎯 String-Only Output**: Optimized for JSON/object to string compression scenarios with multiple format support
+- **🌍 Browser Compatibility**: Works across all modern browsers with automatic polyfills and graceful fallbacks
+- **📈 Performance Monitoring**: Comprehensive compression statistics and performance metrics
+- **⚙️ Configurable**: Flexible configuration system with mobile/desktop optimization profiles
 
 ## Installation
 
