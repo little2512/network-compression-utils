@@ -19,7 +19,6 @@
     "test:watch": "karma start karma.conf.cjs --auto-watch",
     "test:chrome": "karma start karma.conf.cjs --single-run --browsers ChromeHeadless",
     "test:edge": "karma start karma.conf.cjs --single-run --browsers EdgeHeadless",
-    "test:firefox": "karma start karma.conf.cjs --single-run --browsers FirefoxHeadless",
     "test:headed": "karma start karma.conf.cjs --single-run --browsers Chrome",
     "test:debug": "karma start karma.conf.cjs --auto-watch --browsers Chrome",
     "test:coverage": "karma start karma.conf.cjs --single-run --browsers ChromeHeadless --reporters coverage,dots",
@@ -90,7 +89,6 @@
     "karma-chrome-launcher": "^3.2.0",
     "karma-coverage": "^2.2.1",
     "karma-edge-launcher": "^0.4.2",
-    "karma-firefox-launcher": "^2.1.3",
     "karma-jasmine": "^5.1.0",
     "prettier": "^3.0.0",
     "rollup": "^3.25.1"
